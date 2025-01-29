@@ -4,7 +4,8 @@ import random
 
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ChatMemberStatus
-from aiogram.types import ChatMemberUpdated
+from aiogram.filters import CommandStart
+from aiogram.types import ChatMemberUpdated, Message
 import asyncio
 from dotenv import load_dotenv
 
@@ -50,6 +51,16 @@ async def new_member_handler(event: ChatMemberUpdated):
                 )
             except Exception as e:
                 logger.error(f"Ошибка при отправке стикера: {e}")
+
+
+@dp.message(CommandStart())
+async def start(message: Message):
+    await message.answer("Привет! Я бот, который приветствует новых участников.")
+    await message.answer(
+        "Я отправляю случайный стикер при добавлении нового участника."
+    )
+    await message.answer("Чтобы добавить меня в свой чат, перейдите по ссылке:")
+    await message.answer("https://t.me/crewassrun_bot?startgroup=new")
 
 
 # Запуск бота
