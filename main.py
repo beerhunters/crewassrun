@@ -26,6 +26,16 @@ bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
 
+@dp.message(CommandStart())
+async def start(message: Message):
+    await message.answer("Привет! Я бот, который приветствует новых участников.")
+    # await message.answer(
+    #     "Я отправляю случайный стикер при добавлении нового участника."
+    # )
+    # await message.answer("Чтобы добавить меня в свой чат, перейдите по ссылке:")
+    # await message.answer("https://t.me/crewassrun_bot?startgroup=new")
+
+
 # Обработка события: новый участник
 @dp.chat_member()
 async def new_member_handler(event: ChatMemberUpdated):
@@ -51,16 +61,6 @@ async def new_member_handler(event: ChatMemberUpdated):
                 )
             except Exception as e:
                 logger.error(f"Ошибка при отправке стикера: {e}")
-
-
-@dp.message(CommandStart())
-async def start(message: Message):
-    await message.answer("Привет! Я бот, который приветствует новых участников.")
-    await message.answer(
-        "Я отправляю случайный стикер при добавлении нового участника."
-    )
-    await message.answer("Чтобы добавить меня в свой чат, перейдите по ссылке:")
-    await message.answer("https://t.me/crewassrun_bot?startgroup=new")
 
 
 # Запуск бота
