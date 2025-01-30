@@ -1,71 +1,49 @@
-import logging
-import os
-import random
-
-from aiogram import Bot, Dispatcher
-from aiogram.enums import ChatMemberStatus
-from aiogram.filters import CommandStart
-from aiogram.types import ChatMemberUpdated, Message
 import asyncio
+import os
+
+import aiocron
+from aiogram import Bot, Dispatcher
+from aiogram.types import BotCommand
+
 from dotenv import load_dotenv
 
-
-load_dotenv()
-
-API_TOKEN = os.getenv("API_TOKEN")
-STICKER_IDS = [
-    "CAACAgIAAxkBAAENqQdnmgj2PreJnV9zPnYLeQr9oE_6ywACBmYAAl3N0Uj-7tbvioUa5TYE",
-    "CAACAgIAAxkBAAENp0FnmOucMj3bxD-d8KBzb7sqM1RTlQACu1wAAkI8yEgIHgv8-kFWxzYE",
-]
-# Настройка логгера
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Создаем экземпляры бота и диспетчера
-bot = Bot(token=API_TOKEN)
-dp = Dispatcher()
+from handlers.in_game import in_game_r
+from handlers.new_member import new_member_r
+from handlers.random_user import send_random_message
+from handlers.start import start_r
+from logger import logger
 
 
-@dp.message(CommandStart())
-async def start(message: Message):
-    await message.answer("Привет! Я бот, который приветствует новых участников.")
-    # await message.answer(
-    #     "Я отправляю случайный стикер при добавлении нового участника."
-    # )
-    # await message.answer("Чтобы добавить меня в свой чат, перейдите по ссылке:")
-    # await message.answer("https://t.me/crewassrun_bot?startgroup=new")
-
-
-# Обработка события: новый участник
-@dp.chat_member()
-async def new_member_handler(event: ChatMemberUpdated):
-    # Проверяем, что статус участника изменился с "left" на "member"
-    if (
-        event.old_chat_member.status == ChatMemberStatus.LEFT
-        and event.new_chat_member.status == ChatMemberStatus.MEMBER
-    ):
-        new_member = event.new_chat_member.user
-        chat_id = event.chat.id
-
-        # Проверяем, что это не бот
-        if not new_member.is_bot:
-            try:
-                # Выбираем случайный стикер
-                sticker_id = random.choice(STICKER_IDS)
-                # Отправляем стикер
-                await bot.send_sticker(chat_id, sticker=sticker_id)
-
-                # Логирование
-                logger.info(
-                    f"Стикер отправлен новому участнику: {new_member.full_name} (ID: {new_member.id})"
-                )
-            except Exception as e:
-                logger.error(f"Ошибка при отправке стикера: {e}")
-
-
-# Запуск бота
 async def main():
-    await dp.start_polling(bot)
+    """Главная функция для запуска бота."""
+    load_dotenv()
+    bot = Bot(
+        token=os.getenv("API_TOKEN"),
+    )
+    dp = Dispatcher()
+    dp.include_routers(start_r, new_member_r, in_game_r)
+    bot_commands = [
+        BotCommand(command="/start", description="Запустить бота"),
+        BotCommand(command="/play", description="Играть"),
+        BotCommand(command="/stats", description="Статистика"),
+    ]
+    await bot.set_my_commands(bot_commands)
+    try:
+        try:
+            cron_task = aiocron.crontab(
+                "0 9 * * *",
+                func=lambda: asyncio.create_task(send_random_message(bot)),
+            )
+            cron_task.start()
+            logger.info("Задача отправки случайного сообщения запущена...")
+        except Exception as e:
+            logger.error(f"Ошибка при запуске задачи: {e}")
+        logger.info("Бот запущен...")
+        await dp.start_polling(bot)
+    except Exception as e:
+        logger.error(f"Ошибка при работе бота: {e}")
+    finally:
+        await bot.session.close()
 
 
 if __name__ == "__main__":
