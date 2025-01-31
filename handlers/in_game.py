@@ -40,10 +40,14 @@ async def in_game_handler(message: types.Message):
         else:
             # Если не в игре, добавим в игру
             await add_user_to_game(user_id)
-            message = random.choice(IN_GAME_TEXT).format(
-                user=f"{user.username}" if user.username else user.full_name
+            text = random.choice(IN_GAME_TEXT).format(
+                user=(
+                    f"{from_user.username}"
+                    if from_user.username
+                    else from_user.full_name
+                )
             )
-            await message.reply(message)
+            await message.reply(text)
             # await message.reply(f"Ты успешно присоединился к игре, {user.username}! 🎉")
     else:
         # Если пользователя нет в базе данных
@@ -53,10 +57,10 @@ async def in_game_handler(message: types.Message):
             full_name=from_user.full_name,
             chat_id=chat_id,
         )
-        message = random.choice(IN_GAME_TEXT).format(
-            user=f"{user.username}" if user.username else user.full_name
+        text = random.choice(IN_GAME_TEXT).format(
+            user=f"{from_user.username}" if from_user.username else from_user.full_name
         )
-        await message.reply(message)
+        await message.reply(text)
         # await message.reply(
         #     f"Ты успешно присоединился к игре, {from_user.username}! 🎉"
         # )
