@@ -1,4 +1,4 @@
-from sqlalchemy import func, cast, String, text, asc
+from sqlalchemy import func, cast, String, text, asc, literal, literal_column
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -103,35 +103,70 @@ async def add_or_update_user_bun(
         await session.rollback()
 
 
+# @with_session
+# async def get_top_buns_with_users(
+#     session: AsyncSession, chat_id: int, limit: int = 10, offset: int = 0
+# ):
+#     # Строим запрос для получения топовых булочек и пользователей с количеством повторов
+#     query = select(
+#         UserBun.bun,
+#         func.group_concat(
+#             func.concat("@", UserBun.username, " (", UserBun.count, " раз)")
+#         ).label("users"),
+#         func.max(UserBun.count).label("max_repeats"),
+#     ).filter(
+#         UserBun.chat_id == chat_id
+#     )  # фильтруем по chat_id
+#     query = query.group_by(UserBun.bun)  # группируем по булочке
+#     query = query.order_by(
+#         asc("max_repeats")
+#     )  # сортируем по максимальному количеству повторов
+#     query = query.limit(limit).offset(offset)  # ограничиваем по лимиту и оффсету
+#
+#     result = await session.execute(query)
+#
+#     # Получаем результат
+#     top_buns = result.fetchall()
+#
+#     # Преобразуем в нужный формат (с split для users)
+#     return [
+#         {"bun": bun, "users": users.split(","), "max_repeats": max_repeats}
+#         for bun, users, max_repeats in top_buns
+#     ]
 @with_session
 async def get_top_buns_with_users(
     session: AsyncSession, chat_id: int, limit: int = 10, offset: int = 0
 ):
     # Строим запрос для получения топовых булочек и пользователей с количеством повторов
-    query = select(
-        UserBun.bun,
-        func.group_concat(
-            func.concat("@", UserBun.username, " (", UserBun.count, " раз)")
-        ).label("users"),
-        func.max(UserBun.count).label("max_repeats"),
-    ).filter(
-        UserBun.chat_id == chat_id
-    )  # фильтруем по chat_id
-    query = query.group_by(UserBun.bun)  # группируем по булочке
-    query = query.order_by(
-        asc("max_repeats")
-    )  # сортируем по максимальному количеству повторов
-    query = query.limit(limit).offset(offset)  # ограничиваем по лимиту и оффсету
+    query = (
+        select(
+            UserBun.bun,
+            func.group_concat(
+                func.concat(
+                    literal_column("'@'"),
+                    UserBun.username,
+                    literal_column("' ('"),
+                    cast(UserBun.count, String),
+                    literal_column("' раз)'"),
+                )
+            ).label("users"),
+            func.max(UserBun.count).label("max_repeats"),
+        )
+        .where(UserBun.chat_id == chat_id)
+        .group_by(UserBun.bun)
+        .order_by(asc("max_repeats"))
+        .limit(limit)
+        .offset(offset)
+    )
 
     result = await session.execute(query)
-
-    # Получаем результат
     top_buns = result.fetchall()
 
-    # Преобразуем в нужный формат (с split для users)
+    # Обрабатываем результат
     return [
         {"bun": bun, "users": users.split(","), "max_repeats": max_repeats}
         for bun, users, max_repeats in top_buns
+        if users
     ]
 
 
