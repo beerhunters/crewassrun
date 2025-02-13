@@ -98,30 +98,6 @@ async def escape_markdown(text: str) -> str:
     return re.sub(r"([" + re.escape(escape_chars) + r"])", r"\\\1", text)
 
 
-# @in_game_r.message(Command(commands="stats"))
-# async def stats_handler(message: types.Message):
-#     chat_id = message.chat.id
-#
-#     if message.chat.type == "private":
-#         await message.reply("Эту команду можно использовать только в групповом чате!")
-#         return
-#
-#     top_buns = await get_top_buns_with_users(chat_id=chat_id)
-#
-#     if not top_buns:
-#         await message.reply("Пока нет данных для статистики 📊")
-#         return
-#
-#     # Экранируем спецсимволы перед отправкой
-#     stats_text = "**🏆 Топ-10 булочек и их владельцев:**\n\n"
-#     for i, item in enumerate(top_buns, start=1):
-#         bun = await escape_markdown(item["bun"])  # Экранируем булочку
-#         users = [
-#             await escape_markdown(user) for user in item["users"]
-#         ]  # Экранируем юзернеймы
-#         stats_text += f"{i}. {bun} - {', '.join(users)} 🔥\n"
-#
-#     await message.reply(stats_text, parse_mode="MarkdownV2")  # Используем MarkdownV2
 @in_game_r.message(Command(commands="stats"))
 async def stats_handler(message: types.Message):
     chat_id = message.chat.id
@@ -137,15 +113,17 @@ async def stats_handler(message: types.Message):
         return
 
     # Экранируем символы перед отправкой
-    stats_text = "*🏆 Топ\\-10 булочек и их владельцев\\:*\n\n"
+    stats_text = "<b>🏆 Топ-10 булочек и их владельцев:</b>\n\n"
     for i, item in enumerate(top_buns, start=1):
-        bun = await escape_markdown(item["bun"])  # Экранируем булочку
-        users = [
-            await escape_markdown(user) for user in item["users"]
-        ]  # Экранируем юзернеймы
-        stats_text += f"{i}\\ {bun} \\- {'\\, '.join(users)} 🔥\n"
-        print(stats_text)
-    await message.reply(stats_text, parse_mode="MarkdownV2")
+        # bun = await escape_markdown(item["bun"])  # Экранируем булочку
+        # users = [
+        #     await escape_markdown(user) for user in item["users"]
+        # ]  # Экранируем юзернеймы
+        bun = item["bun"]
+        users = item["users"]
+        stats_text += f"{i}. {bun} - {', '.join(users)} 🔥\n"
+        # print(stats_text)
+    await message.reply(stats_text, parse_mode="HTML")
 
 
 @in_game_r.message(Command(commands="stats_me"))
@@ -166,10 +144,10 @@ async def stats_me_handler(message: types.Message):
         return
 
     # Формируем текст статистики для пользователя
-    stats_text = f"**🧁 Ваша статистика\\:**\n\n"
+    stats_text = f"**🧁 Ваша статистика:**\n\n"
     for i, item in enumerate(user_buns, start=1):
         bun = item["bun"]
         count = item["count"]
-        stats_text += f"{i}\\ {bun} \\- {count} раз\\(а\\) 🔥\n"
+        stats_text += f"{i} {bun} - {count} раз(а) 🔥\n"
 
     await message.reply(stats_text, parse_mode="Markdown")
