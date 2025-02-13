@@ -2,8 +2,6 @@ from aiogram import Router
 from aiogram.filters import CommandStart
 from aiogram.types import Message
 
-from handlers.random_user import send_random_message
-
 start_r = Router()
 
 

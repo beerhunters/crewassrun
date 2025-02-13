@@ -1,5 +1,4 @@
 import random
-import re
 
 from aiogram import types, Router
 from aiogram.filters import Command
@@ -9,7 +8,6 @@ from database.queries import (
     get_user_by_id,
     add_user_to_game,
     add_user,
-    # get_top_users_by_repetitions,
     get_top_buns_with_users,
     get_user_buns_stats,
 )
@@ -51,7 +49,6 @@ async def in_game_handler(message: types.Message):
                 )
             )
             await message.reply(text)
-            # await message.reply(f"Ты успешно присоединился к игре, {user.username}! 🎉")
     else:
         # Если пользователя нет в базе данных
         await add_user(
@@ -64,9 +61,6 @@ async def in_game_handler(message: types.Message):
             user=f"{from_user.username}" if from_user.username else from_user.full_name
         )
         await message.reply(text)
-        # await message.reply(
-        #     f"Ты успешно присоединился к игре, {from_user.username}! 🎉"
-        # )
 
 
 @in_game_r.message(Command(commands="stats"))
