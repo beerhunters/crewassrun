@@ -143,7 +143,7 @@ async def stats_handler(message: types.Message):
         users = [
             await escape_markdown(user) for user in item["users"]
         ]  # Экранируем юзернеймы
-        stats_text += f"{i}\\. {bun} \\- {'\\, '.join(users)} 🔥\n"
+        stats_text += f"{i}\\ {bun} \\- {'\\, '.join(users)} 🔥\n"
         print(stats_text)
     await message.reply(stats_text, parse_mode="MarkdownV2")
 
@@ -170,6 +170,6 @@ async def stats_me_handler(message: types.Message):
     for i, item in enumerate(user_buns, start=1):
         bun = item["bun"]
         count = item["count"]
-        stats_text += f"{i}\\. {bun} \\- {count} раз\\(а\\) 🔥\n"
+        stats_text += f"{i}\\ {bun} \\- {count} раз\\(а\\) 🔥\n"
 
     await message.reply(stats_text, parse_mode="Markdown")
