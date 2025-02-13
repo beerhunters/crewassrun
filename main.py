@@ -26,6 +26,7 @@ async def main():
         BotCommand(command="/start", description="Запустить бота"),
         BotCommand(command="/play", description="Играть"),
         BotCommand(command="/stats", description="Статистика"),
+        BotCommand(command="/stats_me", description="Моя статистика"),
     ]
     await bot.set_my_commands(bot_commands)
     try:

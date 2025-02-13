@@ -1,7 +1,8 @@
-from sqlalchemy import func
+from sqlalchemy import func, cast, String, text, asc
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
 from database.db import with_session
 from database.models import User, UserBun
@@ -103,38 +104,71 @@ async def add_or_update_user_bun(
 
 
 @with_session
-async def get_top_users_by_repetitions(
-    session: AsyncSession, chat_id: int, limit: int = 10
+async def get_top_buns_with_users(
+    session: AsyncSession, chat_id: int, limit: int = 10, offset: int = 0
 ):
-    """Возвращает топ пользователей с наибольшим количеством повторений одной булочки, исключая дубли"""
+    # Строим запрос для получения топовых булочек и пользователей с количеством повторов
+    query = select(
+        UserBun.bun,
+        func.group_concat(
+            func.concat("@", UserBun.username, " (", UserBun.count, " раз)")
+        ).label("users"),
+        func.max(UserBun.count).label("max_repeats"),
+    ).filter(
+        UserBun.chat_id == chat_id
+    )  # фильтруем по chat_id
+    query = query.group_by(UserBun.bun)  # группируем по булочке
+    query = query.order_by(
+        asc("max_repeats")
+    )  # сортируем по максимальному количеству повторов
+    query = query.limit(limit).offset(offset)  # ограничиваем по лимиту и оффсету
 
-    # Подзапрос: выбираем максимальное число повторений для каждого пользователя
-    max_repeats_subquery = (
-        select(
-            UserBun.user_id,
-            func.max(UserBun.count).label("max_repeats"),
-        )
-        .where(UserBun.chat_id == chat_id)
-        .group_by(UserBun.user_id)
-        .subquery()
-    )
+    result = await session.execute(query)
 
-    # Основной запрос: выбираем пользователей с их булочкой, у которых количество повторений = максимальному
-    result = await session.execute(
-        select(
-            UserBun.full_name,
-            UserBun.bun,
-            max_repeats_subquery.c.max_repeats,
-        )
-        .join(
-            max_repeats_subquery,
-            (UserBun.user_id == max_repeats_subquery.c.user_id)
-            & (UserBun.count == max_repeats_subquery.c.max_repeats),
-        )
-        .where(UserBun.chat_id == chat_id)
-        .distinct(UserBun.user_id)  # Исключаем дубли пользователей
-        .order_by(UserBun.count.desc())  # Сортируем по убыванию
-        .limit(limit)  # Ограничиваем количество записей
-    )
+    # Получаем результат
+    top_buns = result.fetchall()
 
-    return result.all()
+    # Преобразуем в нужный формат (с split для users)
+    return [
+        {"bun": bun, "users": users.split(","), "max_repeats": max_repeats}
+        for bun, users, max_repeats in top_buns
+    ]
+
+
+# @with_session
+# async def get_user_buns_stats(session: AsyncSession, user_id: int, chat_id: int):
+#     # Запрос для получения булочек конкретного пользователя
+#     query = select(UserBun.bun, func.sum(UserBun.count).label("count")).filter(
+#         UserBun.user_id == user_id, UserBun.chat_id == chat_id
+#     )  # фильтруем по user_id и chat_id
+#     query = query.group_by(UserBun.bun)  # группируем по булочкам
+#     query = query.order_by(asc("count"))  # сортируем по количеству повторов
+#
+#     result = await session.execute(query)
+#
+#     # Получаем результат
+#     user_buns = result.fetchall()
+#
+#     # Преобразуем в нужный формат
+#     return [{"bun": bun, "count": count} for bun, count in user_buns]
+
+
+@with_session
+async def get_user_buns_stats(session: AsyncSession, user_id: int, chat_id: int):
+    # Запрос для получения булочек конкретного пользователя с использованием связи
+    query = select(UserBun.bun, func.sum(UserBun.count).label("count")).join(
+        User, User.id == UserBun.user_id
+    )  # Соединяем UserBun с User по user_id
+    query = query.filter(
+        User.user_id == user_id, UserBun.chat_id == chat_id
+    )  # Фильтруем по user_id и chat_id
+    query = query.group_by(UserBun.bun)  # Группируем по булочкам
+    query = query.order_by(asc("count"))  # Сортируем по количеству повторов
+
+    result = await session.execute(query)
+
+    # Получаем результат
+    user_buns = result.fetchall()
+
+    # Преобразуем в нужный формат
+    return [{"bun": bun, "count": count} for bun, count in user_buns]

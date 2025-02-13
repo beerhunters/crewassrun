@@ -8,7 +8,9 @@ from database.queries import (
     get_user_by_id,
     add_user_to_game,
     add_user,
-    get_top_users_by_repetitions,
+    # get_top_users_by_repetitions,
+    get_top_buns_with_users,
+    get_user_buns_stats,
 )
 
 in_game_r = Router()
@@ -75,15 +77,44 @@ async def stats_handler(message: types.Message):
         await message.reply("Эту команду можно использовать только в групповом чате!")
         return
 
-    top_users = await get_top_users_by_repetitions(chat_id=chat_id)
+    top_buns = await get_top_buns_with_users(chat_id=chat_id)
 
-    if not top_users:
+    if not top_buns:
         await message.reply("Пока нет данных для статистики 📊")
         return
 
     # Формируем текст статистики
-    stats_text = "**🏆 Топ-10 игроков:**\n\n"
-    for i, (full_name, bun, max_repeats) in enumerate(top_users, start=1):
-        stats_text += f"{i}. {full_name} — {bun} ({max_repeats} раз) 🔥\n"
+    stats_text = "**🏆 Топ-10 булочек и их владельцев:**\n\n"
+    for i, item in enumerate(top_buns, start=1):
+        bun = item["bun"]
+        users = item["users"]
+        stats_text += f"{i}. {bun} - {', '.join(users)} 🔥\n"
+
+    await message.reply(stats_text, parse_mode="Markdown")
+
+
+@in_game_r.message(Command(commands="stats_me"))
+async def stats_me_handler(message: types.Message):
+    user_id = message.from_user.id  # Получаем ID пользователя, который вызвал команду
+    chat_id = message.chat.id  # Получаем chat_id
+
+    # Проверяем, не личные ли это сообщения
+    if message.chat.type == "private":
+        await message.reply("Эту команду можно использовать только в групповом чате!")
+        return
+
+    # Получаем статистику по булочкам для конкретного пользователя
+    user_buns = await get_user_buns_stats(user_id=user_id, chat_id=chat_id)
+
+    if not user_buns:
+        await message.reply("Вы еще не выбрали булочек или не играете в этой игре 📊")
+        return
+
+    # Формируем текст статистики для пользователя
+    stats_text = f"**🧁 Ваша статистика:**\n\n"
+    for i, item in enumerate(user_buns, start=1):
+        bun = item["bun"]
+        count = item["count"]
+        stats_text += f"{i}. {bun} - {count} раз(а) 🔥\n"
 
     await message.reply(stats_text, parse_mode="Markdown")
