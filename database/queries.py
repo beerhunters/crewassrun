@@ -137,24 +137,23 @@ async def add_or_update_user_bun(
 async def get_top_buns_with_users(
     session: AsyncSession, chat_id: int, limit: int = 10, offset: int = 0
 ):
-    # Строим запрос для получения топовых булочек и пользователей с количеством повторов
+    # Используем оператор "+" вместо "||" для SQLite в SQLAlchemy
     query = (
         select(
             UserBun.bun,
             func.group_concat(
-                func.concat(
-                    literal_column("'@'"),
-                    UserBun.username,
-                    literal_column("' ('"),
-                    cast(UserBun.count, String),
-                    literal_column("' раз)'"),
-                )
+                literal("@")
+                + UserBun.username
+                + literal(" (")
+                + cast(UserBun.count, String)
+                + literal(" раз)"),
+                ", ",
             ).label("users"),
             func.max(UserBun.count).label("max_repeats"),
         )
         .where(UserBun.chat_id == chat_id)
         .group_by(UserBun.bun)
-        .order_by(asc("max_repeats"))
+        .order_by(func.max(UserBun.count).asc())  # Сортировка по количеству повторов
         .limit(limit)
         .offset(offset)
     )
@@ -164,7 +163,7 @@ async def get_top_buns_with_users(
 
     # Обрабатываем результат
     return [
-        {"bun": bun, "users": users.split(","), "max_repeats": max_repeats}
+        {"bun": bun, "users": users.split(", "), "max_repeats": max_repeats}
         for bun, users, max_repeats in top_buns
         if users
     ]
