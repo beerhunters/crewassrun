@@ -21,7 +21,7 @@ load_dotenv()
 # Настройка логгера
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | [%(filename)s:%(lineno)d] - %(message)s",
-    level=logging.INFO,
+    level=logging.ERROR,
     filename="logs/bot_errors.log",
     encoding="utf-8",
 )
