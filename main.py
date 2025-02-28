@@ -7,6 +7,7 @@ from aiogram.types import BotCommand
 
 from dotenv import load_dotenv
 
+from handlers.exceptions import error_router
 from handlers.in_game import in_game_r
 from handlers.new_member import new_member_r
 from handlers.random_user import send_random_message
@@ -21,7 +22,7 @@ async def main():
         token=os.getenv("API_TOKEN"),
     )
     dp = Dispatcher()
-    dp.include_routers(start_r, new_member_r, in_game_r)
+    dp.include_routers(start_r, new_member_r, in_game_r, error_router)
     bot_commands = [
         BotCommand(command="/start", description="Запустить бота"),
         BotCommand(command="/play", description="Играть"),
