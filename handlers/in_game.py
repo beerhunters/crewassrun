@@ -10,6 +10,8 @@ from database.queries import (
     add_user,
     get_top_buns_with_users,
     get_user_buns_stats,
+    delete_user_by_id,
+    get_all_users,
 )
 
 in_game_r = Router()
@@ -111,3 +113,36 @@ async def stats_me_handler(message: types.Message):
         stats_text += f"{i}. {bun} - {count} раз(а) 🔥\n"
 
     await message.reply(stats_text, parse_mode="HTML")
+
+
+# Обработчик для списка пользователей
+@in_game_r.message(Command(commands="user_list"))
+async def user_list_handler(message: types.Message):
+    # Проверяем, что команду вызывает администратор
+    if message.from_user.id != 267863612:
+        await message.reply("У вас нет прав для выполнения этой команды! 🔒")
+        return
+
+    # Проверяем, что это личные сообщения
+    if message.chat.type != "private":
+        await message.reply(
+            "Эту команду можно использовать только в личных сообщениях!"
+        )
+        return
+
+    # Получаем список всех пользователей
+    users = await get_all_users()
+
+    if not users:
+        await message.reply("В этом чате пока нет пользователей! 👤")
+        return
+
+    # Формируем текст со списком пользователей
+    user_list_text = "<b>👥 Список пользователей:</b>\n\n"
+    for i, user in enumerate(users, start=1):
+        username = user.username if user.username else "Без имени"
+        user_list_text += (
+            f"{i}. ID: {user.user_id} - @{username} - ЧатID: {user.chat_id}\n"
+        )
+
+    await message.reply(user_list_text, parse_mode="HTML")

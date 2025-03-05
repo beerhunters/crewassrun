@@ -157,3 +157,10 @@ async def get_user_buns_stats(session: AsyncSession, user_id: int, chat_id: int)
 
     # Преобразуем в нужный формат
     return [{"bun": bun, "count": count} for bun, count in user_buns]
+
+
+# Функции в database/queries.py с декоратором @with_session
+@with_session
+async def get_all_users(session: AsyncSession):
+    result = await session.execute(select(User))
+    return result.scalars().all()

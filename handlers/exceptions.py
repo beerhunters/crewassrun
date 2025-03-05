@@ -9,13 +9,6 @@ from aiogram.handlers import ErrorHandler
 from aiogram.types import Update
 from dotenv import load_dotenv
 
-# from fluent.runtime import FluentLocalization
-
-# from config import ADMIN_URL, FOR_LOGS
-# import tgbot.general_keyboards as kb
-#
-# from tools.fluent_loader import get_fluent_localization
-
 load_dotenv()
 
 # Настройка логгера
@@ -123,7 +116,6 @@ class MyHandler(ErrorHandler):
 
     async def _handle_notifications(self, error_info: ErrorInfo) -> None:
         """Управление уведомлениями об ошибке"""
-        # l10n = await self._get_localization(error_info.update)
 
         # Уведомление пользователя
         try:
@@ -145,61 +137,23 @@ class MyHandler(ErrorHandler):
                 traceback.format_exc(),
             )
 
-    # async def _get_localization(self, update: Optional[Update]) -> FluentLocalization:
-    #     """Получение локализации для пользователя"""
-    #     try:
-    #         if update and hasattr(update, "message") and update.message:
-    #             return get_fluent_localization(update.message.from_user.language_code)
-    #         elif update and hasattr(update, "callback_query") and update.callback_query:
-    #             return get_fluent_localization(
-    #                 update.callback_query.from_user.language_code
-    #             )
-    #         return get_fluent_localization("en")
-    #     except Exception as e:
-    #         logger.error("Ошибка получения локализации: %s", str(e))
-    #         return get_fluent_localization("en")
-
     async def _notify_user(self, update: Optional[Update]) -> None:
         """Отправка сообщения пользователю"""
         if not update:
             logger.warning("Нет update для уведомления пользователя")
             return
 
-        # try:
-        #     admin_button = await kb.create_buttons(
-        #         buttons_data=[
-        #             (l10n.format_value("contact_admin_button"), ADMIN_URL, "url"),
-        #         ],
-        #         back_callback_data="main_menu",
-        #         l10n=l10n,
-        #     )
-        # except Exception as e:
-        #     logger.error("Не удалось создать кнопки: %s", str(e))
-        #     admin_button = None
-
-        # Проверка наличия ключа в локализации
-        # try:
-        # user_message = l10n.format_value("error_text")
         user_message = (
             "⚠️ Произошла ошибка!\n\n"
             "Пожалуйста, сделайте скриншот этого сообщения и отправьте его администратору, описав, что вы делали перед ошибкой.\n"
             "Спасибо за помощь в улучшении бота! 😊"
         )
-        # except Exception:
-        #     user_message = "Произошла ошибка!"
-        #     logger.warning(
-        #         "Ключ 'error_text' не найден в локализации, использовано запасное значение"
-        #     )
 
         try:
             if update.message:
-                # await update.message.answer(user_message, reply_markup=admin_button)
                 await update.message.answer(user_message)
                 logger.info("Сообщение об ошибке отправлено пользователю (Message)")
             elif update.callback_query and update.callback_query.message:
-                # await update.callback_query.message.answer(
-                #     user_message, reply_markup=admin_button
-                # )
                 await update.callback_query.message.answer(user_message)
                 logger.info(
                     "Сообщение об ошибке отправлено пользователю (CallbackQuery)"
