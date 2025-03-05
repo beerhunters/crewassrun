@@ -10,7 +10,6 @@ from database.queries import (
     add_user,
     get_top_buns_with_users,
     get_user_buns_stats,
-    delete_user_by_id,
     get_all_users,
 )
 
