@@ -169,37 +169,6 @@ async def user_list_handler(message: types.Message):
     await message.reply(response, parse_mode="HTML")
 
 
-# @in_game_r.message(Command(commands="remove_from_game"))
-# async def remove_from_game_handler(message: types.Message):
-#     """Удаление пользователя из розыгрыша (только для admin в ЛС)."""
-#     if message.chat.type != "private" or message.from_user.id != ALLOWED_ADMIN_ID:
-#         await message.reply(
-#             "Эта команда доступна только администратору в личных сообщениях!"
-#         )
-#         return
-#
-#     # Ожидаем аргументы: telegram_id и chat_id
-#     args = message.text.split()[1:]  # Пропускаем саму команду
-#     if len(args) != 2:
-#         await message.reply("Использование: /remove_from_game <telegram_id> <chat_id>")
-#         return
-#
-#     try:
-#         telegram_id = int(args[0])
-#         chat_id = int(args[1])
-#     except ValueError:
-#         await message.reply("telegram_id и chat_id должны быть числами!")
-#         return
-#
-#     removed = await remove_user_from_game(telegram_id=telegram_id, chat_id=chat_id)
-#     if removed:
-#         await message.reply(
-#             f"Пользователь {telegram_id} удален из розыгрыша в чате {chat_id}."
-#         )
-#     else:
-#         await message.reply(
-#             f"Пользователь {telegram_id} не найден или уже не в игре в чате {chat_id}."
-#         )
 @in_game_r.message(Command(commands="remove_from_game"))
 async def remove_from_game_handler(message: types.Message):
     """Удаление пользователя из розыгрыша по порядковому номеру (только для admin в ЛС)."""
@@ -216,7 +185,9 @@ async def remove_from_game_handler(message: types.Message):
         return
 
     try:
-        user_index = int(args[0]) - 1  # Преобразуем в индекс (нумерация с 1, индексы с 0)
+        user_index = (
+            int(args[0]) - 1
+        )  # Преобразуем в индекс (нумерация с 1, индексы с 0)
     except ValueError:
         await message.reply("Порядковый номер должен быть целым числом!")
         return
@@ -229,7 +200,9 @@ async def remove_from_game_handler(message: types.Message):
 
     # Проверяем, что номер в допустимом диапазоне
     if user_index < 0 or user_index >= len(users):
-        await message.reply(f"Пользователь с номером {user_index + 1} не найден в списке!")
+        await message.reply(
+            f"Пользователь с номером {user_index + 1} не найден в списке!"
+        )
         return
 
     # Извлекаем данные пользователя по индексу
