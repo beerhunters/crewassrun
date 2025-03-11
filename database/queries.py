@@ -1,8 +1,6 @@
-from sqlalchemy import func, cast, String, asc, literal
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from database.db import with_session
 from database.models import User, UserBun
 import random
@@ -10,157 +8,207 @@ import random
 
 @with_session
 async def add_user(
-    session: AsyncSession,
-    user_id: int,
-    chat_id: int,
-    username: str,
-    full_name: str,
+    session: AsyncSession, telegram_id: int, chat_id: int, username: str, full_name: str
 ):
-    """Добавляет пользователя в базу данных или обновляет его статус, если он уже есть."""
-    # Проверяем, есть ли пользователь в базе данных
-    result = await session.execute(select(User).where(User.user_id == user_id))
+    """Добавление нового пользователя или обновление статуса в игре."""
+    result = await session.execute(select(User).where(User.telegram_id == telegram_id))
     user = result.scalars().first()
-
     if user:
-        # Если пользователь найден, проверяем его статус
         if not user.in_game:
-            user.in_game = True  # Если он не в игре, то меняем его статус на "в игре"
-            await session.commit()  # Сохраняем изменения
-        return  # Уже есть в базе
-
-    # Если пользователя нет в базе, создаем нового
+            user.in_game = True
+            await session.commit()
+        return user
     new_user = User(
-        user_id=user_id, chat_id=chat_id, username=username, full_name=full_name
+        telegram_id=telegram_id,
+        chat_id=chat_id,
+        username=username,
+        full_name=full_name,
+        in_game=True,
     )
     session.add(new_user)
     await session.commit()
+    return new_user
 
 
 @with_session
-async def get_user_by_id(session: AsyncSession, user_id: int, chat_id: int):
+async def get_user_by_id(session: AsyncSession, telegram_id: int, chat_id: int):
+    """Получение пользователя по telegram_id и chat_id."""
     result = await session.execute(
-        select(User).where(User.user_id == user_id, User.chat_id == chat_id)
+        select(User).where(User.telegram_id == telegram_id, User.chat_id == chat_id)
     )
-    return result.scalars().first()  # Возвращает объект User или None
+    return result.scalars().first()
 
 
 @with_session
-async def add_user_to_game(session: AsyncSession, user_id: int):
-    """Добавляем пользователя в игру, если его еще нет."""
-    user = await session.execute(select(User).where(User.user_id == user_id))
-    user = user.scalars().first()
-
+async def add_user_to_game(session: AsyncSession, telegram_id: int):
+    """Добавление пользователя в игру."""
+    result = await session.execute(select(User).where(User.telegram_id == telegram_id))
+    user = result.scalars().first()
     if user and not user.in_game:
-        user.in_game = True  # Устанавливаем, что пользователь теперь в игре
+        user.in_game = True
         await session.commit()
-        return True  # Успешно добавлен в игру
-    return False  # Если пользователь уже в игре
+        return True
+    return False
 
 
 @with_session
-async def get_random_user(session: AsyncSession):
-    result = await session.execute(select(User))
+async def set_user_out_of_game(session: AsyncSession, telegram_id: int, chat_id: int):
+    """Установка статуса in_game=False для пользователя, покинувшего чат."""
+    result = await session.execute(
+        select(User).where(User.telegram_id == telegram_id, User.chat_id == chat_id)
+    )
+    user = result.scalars().first()
+    if user and user.in_game:
+        user.in_game = False
+        await session.commit()
+        return True
+    return False
+
+
+@with_session
+async def get_random_user(session: AsyncSession, chat_id: int):
+    """Получение случайного пользователя из чата."""
+    result = await session.execute(
+        select(User).where(User.chat_id == chat_id, User.in_game == True)
+    )
     users = result.scalars().all()
     return random.choice(users) if users else None
 
 
 @with_session
 async def add_or_update_user_bun(
-    session: AsyncSession,
-    user_id: int,
-    chat_id: int,
-    username: str,
-    full_name: str,
-    bun: str,
+    session: AsyncSession, user_id: int, bun: str, chat_id: int
 ):
-    """Добавляет запись или увеличивает количество, если пользователь уже был этой булочкой в данном чате"""
+    """Добавление или обновление записи о булочке для пользователя с учетом очков."""
+    from buns_data import BUNS_POINTS  # Импортируем внутри функции, если нужно
+
+    points_per_bun = BUNS_POINTS.get(bun, 0)  # Очки за одну булочку, по умолчанию 0
     try:
         result = await session.execute(
             select(UserBun).where(
                 UserBun.user_id == user_id,
-                UserBun.chat_id == chat_id,  # Фильтр по чату
                 UserBun.bun == bun,
+                UserBun.chat_id == chat_id,
             )
         )
         user_bun = result.scalars().first()
-
         if user_bun:
-            user_bun.count += 1  # Увеличиваем счетчик
+            user_bun.count += 1
+            user_bun.points = user_bun.count * points_per_bun  # Обновляем очки
         else:
             session.add(
                 UserBun(
                     user_id=user_id,
-                    chat_id=chat_id,  # Сохраняем chat_id
-                    username=username,
-                    full_name=full_name,
                     bun=bun,
+                    chat_id=chat_id,
+                    count=1,
+                    points=points_per_bun,  # Начальные очки для новой булочки
                 )
             )
-
         await session.commit()
     except IntegrityError:
         await session.rollback()
 
 
 @with_session
-async def get_top_buns_with_users(
-    session: AsyncSession, chat_id: int, limit: int = 10, offset: int = 0
-):
-    # Используем оператор "+" вместо "||" для SQLite в SQLAlchemy
+async def get_user_buns_stats(session: AsyncSession, telegram_id: int, chat_id: int):
+    """Получение статистики булочек пользователя: булочка - количество - очки."""
     query = (
+        select(UserBun.bun, UserBun.count, UserBun.points)
+        .join(User, User.id == UserBun.user_id)
+        .where(User.telegram_id == telegram_id, UserBun.chat_id == chat_id)
+    )
+    result = await session.execute(query)
+    user_buns = result.fetchall()
+    return (
+        [
+            {"bun": bun, "count": count, "points": points}
+            for bun, count, points in user_buns
+        ]
+        if user_buns
+        else []
+    )
+
+
+@with_session
+async def get_top_users_by_points(session: AsyncSession, chat_id: int):
+    """Получение топ-10 пользователей по очкам с их лучшей булочкой."""
+    # Подзапрос для получения максимальных очков по булочке для каждого пользователя
+    subquery = (
         select(
-            UserBun.bun,
-            func.group_concat(
-                literal("@")
-                + UserBun.username
-                + literal(" (")
-                + cast(UserBun.count, String)
-                + literal(" раз)"),
-                ", ",
-            ).label("users"),
-            func.max(UserBun.count).label("max_repeats"),
+            UserBun.user_id,
+            func.max(UserBun.points).label("max_points"),
+            UserBun.bun.label("top_bun"),
+            UserBun.count.label("top_count"),
         )
         .where(UserBun.chat_id == chat_id)
-        .group_by(UserBun.bun)
-        .order_by(func.max(UserBun.count).asc())  # Сортировка по количеству повторов
-        .limit(limit)
-        .offset(offset)
+        .group_by(UserBun.user_id)
+        .subquery()
+    )
+
+    # Основной запрос: соединяем с пользователями и сортируем по очкам
+    query = (
+        select(
+            User.username,
+            User.full_name,
+            subquery.c.max_points,
+            subquery.c.top_bun,
+            subquery.c.top_count,
+        )
+        .join(subquery, User.id == subquery.c.user_id)
+        .where(User.chat_id == chat_id, User.in_game == True)
+        .order_by(subquery.c.max_points.desc())
+        .limit(10)
     )
 
     result = await session.execute(query)
-    top_buns = result.fetchall()
+    top_users = result.fetchall()
+    return (
+        [
+            {
+                "username": username,
+                "full_name": full_name,
+                "points": max_points,
+                "bun": top_bun,
+                "count": top_count,
+            }
+            for username, full_name, max_points, top_bun, top_count in top_users
+        ]
+        if top_users
+        else []
+    )
 
-    # Обрабатываем результат
+
+@with_session
+async def get_all_users(session: AsyncSession):
+    """Получение списка всех пользователей."""
+    result = await session.execute(
+        select(
+            User.telegram_id, User.username, User.full_name, User.chat_id, User.in_game
+        )
+    )
+    users = result.fetchall()
     return [
-        {"bun": bun, "users": users.split(", "), "max_repeats": max_repeats}
-        for bun, users, max_repeats in top_buns
-        if users
+        {
+            "telegram_id": telegram_id,
+            "username": username,
+            "full_name": full_name,
+            "chat_id": chat_id,
+            "in_game": in_game,
+        }
+        for telegram_id, username, full_name, chat_id, in_game in users
     ]
 
 
 @with_session
-async def get_user_buns_stats(session: AsyncSession, user_id: int, chat_id: int):
-    # Запрос для получения булочек конкретного пользователя с использованием связи
-    query = select(UserBun.bun, func.sum(UserBun.count).label("count")).join(
-        User, User.id == UserBun.user_id
-    )  # Соединяем UserBun с User по user_id
-    query = query.filter(
-        User.user_id == user_id, UserBun.chat_id == chat_id
-    )  # Фильтруем по user_id и chat_id
-    query = query.group_by(UserBun.bun)  # Группируем по булочкам
-    query = query.order_by(asc("count"))  # Сортируем по количеству повторов
-
-    result = await session.execute(query)
-
-    # Получаем результат
-    user_buns = result.fetchall()
-
-    # Преобразуем в нужный формат
-    return [{"bun": bun, "count": count} for bun, count in user_buns]
-
-
-# Функции в database/queries.py с декоратором @with_session
-@with_session
-async def get_all_users(session: AsyncSession):
-    result = await session.execute(select(User))
-    return result.scalars().all()
+async def remove_user_from_game(session: AsyncSession, telegram_id: int, chat_id: int):
+    """Удаление пользователя из розыгрыша (установка in_game=False)."""
+    result = await session.execute(
+        select(User).where(User.telegram_id == telegram_id, User.chat_id == chat_id)
+    )
+    user = result.scalars().first()
+    if user and user.in_game:
+        user.in_game = False
+        await session.commit()
+        return True
+    return False

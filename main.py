@@ -7,12 +7,11 @@ from aiogram.types import BotCommand
 
 from dotenv import load_dotenv
 
-from handlers.exceptions import error_router
+from handlers.exceptions import error_router, logger
 from handlers.in_game import in_game_r
 from handlers.new_member import new_member_r
 from handlers.random_user import send_random_message
 from handlers.start import start_r
-from logger import logger
 
 
 async def main():
@@ -34,7 +33,9 @@ async def main():
         try:
             cron_task = aiocron.crontab(
                 "0 9 * * *",
-                func=lambda: asyncio.create_task(send_random_message(bot)),
+                func=lambda: asyncio.create_task(
+                    send_random_message(bot, chat_id=int(os.getenv("CHAT_ID")))
+                ),
             )
             cron_task.start()
             logger.info("Задача отправки случайного сообщения запущена...")

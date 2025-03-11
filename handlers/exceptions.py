@@ -11,13 +11,26 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Настройка логгера
+# Убедитесь, что папка существует
+if not os.path.exists("logs"):
+    os.makedirs("logs")
+
+# Настройка логирования в файл и консоль
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | [%(filename)s:%(lineno)d] - %(message)s",
     level=logging.ERROR,
     filename="logs/bot_errors.log",
     encoding="utf-8",
 )
+
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)  # Уровень для консоли
+formatter = logging.Formatter(
+    "%(asctime)s | %(levelname)s | [%(filename)s:%(lineno)d] - %(message)s"
+)
+console_handler.setFormatter(formatter)
+logging.getLogger().addHandler(console_handler)
+
 logger = logging.getLogger(__name__)
 
 error_router = Router()
@@ -170,7 +183,7 @@ class MyHandler(ErrorHandler):
         admin_message = (
             f"⚠️ <b>Ошибка в боте!</b>\n\n"
             f"⏰ <b>Время:</b> {error_info.error_time}\n\n"
-            f"👤 <b>Пользователь:</b> {user_name or 'Неизвестно'}\n"
+            f"👤 <b>Пользователь:</b> @{user_name or 'Неизвестно'}\n"
             f"🆔 <b>ID:</b> {user_id or 'Неизвестно'}\n"
             f"💬 <b>Сообщение:</b> {user_message or 'Неизвестно'}\n\n"
             f"❌ <b>Тип ошибки:</b> {error_info.exception_name}\n"
