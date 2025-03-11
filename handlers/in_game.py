@@ -55,7 +55,7 @@ async def in_game_handler(message: types.Message):
         if user.in_game:
             await message.reply("Ты уже в игре! 🎮")
         else:
-            await add_user_to_game(user_id)
+            await add_user_to_game(user_id, chat_id)
             text = random.choice(IN_GAME_TEXT).format(
                 user=(
                     f"@{from_user.username}"
@@ -72,7 +72,7 @@ async def in_game_handler(message: types.Message):
             chat_id=chat_id,
         )
         text = random.choice(IN_GAME_TEXT).format(
-            user=f"@{from_user.username}" if from_user.username else from_user.full_name
+            user=f"{from_user.username}" if from_user.username else from_user.full_name
         )
         await message.reply(text)
 

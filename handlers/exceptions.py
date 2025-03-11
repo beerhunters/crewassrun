@@ -1,4 +1,4 @@
-import logging
+# handlers/exceptions.py
 import os
 import traceback
 from datetime import datetime
@@ -7,31 +7,7 @@ from typing import Optional
 from aiogram import Router, Bot
 from aiogram.handlers import ErrorHandler
 from aiogram.types import Update
-from dotenv import load_dotenv
-
-load_dotenv()
-
-# Убедитесь, что папка существует
-if not os.path.exists("logs"):
-    os.makedirs("logs")
-
-# Настройка логирования в файл и консоль
-logging.basicConfig(
-    format="%(asctime)s | %(levelname)s | [%(filename)s:%(lineno)d] - %(message)s",
-    level=logging.ERROR,
-    filename="logs/bot_errors.log",
-    encoding="utf-8",
-)
-
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)  # Уровень для консоли
-formatter = logging.Formatter(
-    "%(asctime)s | %(levelname)s | [%(filename)s:%(lineno)d] - %(message)s"
-)
-console_handler.setFormatter(formatter)
-logging.getLogger().addHandler(console_handler)
-
-logger = logging.getLogger(__name__)
+from logger import logger  # Импортируем единый логгер
 
 error_router = Router()
 
@@ -53,11 +29,9 @@ class ErrorInfo:
         """Получение точного местоположения ошибки"""
         if not hasattr(self.exception, "__traceback__"):
             return "❓ Неизвестное местоположение"
-
         tb = traceback.extract_tb(self.exception.__traceback__)
         if not tb:
             return "❓ Неизвестное местоположение"
-
         last_call = tb[-1]
         filename = last_call.filename
         line = last_call.lineno
@@ -105,17 +79,12 @@ class MyHandler(ErrorHandler):
 
     async def handle(self) -> None:
         logger.info("Обработчик ошибок вызван")
-
         exception = getattr(self.event, "exception", None)
         update = getattr(self.event, "update", None)
-
         if not exception:
             logger.error("Событие без исключения: %s", self.event)
             return
-
         error_info = ErrorInfo(exception, update)
-
-        # Логирование ошибки
         logger.error(
             "Ошибка %s: %s\nМестоположение: %s\nTraceback: %s",
             error_info.exception_name,
@@ -123,14 +92,10 @@ class MyHandler(ErrorHandler):
             error_info.error_location.replace("\n", " | "),
             error_info.traceback_snippet,
         )
-
-        # Обработка уведомлений
         await self._handle_notifications(error_info)
 
     async def _handle_notifications(self, error_info: ErrorInfo) -> None:
         """Управление уведомлениями об ошибке"""
-
-        # Уведомление пользователя
         try:
             await self._notify_user(error_info.update)
         except Exception as e:
@@ -139,8 +104,6 @@ class MyHandler(ErrorHandler):
                 str(e),
                 traceback.format_exc(),
             )
-
-        # Уведомление администраторов
         try:
             await self._notify_admins(error_info)
         except Exception as e:
@@ -155,13 +118,11 @@ class MyHandler(ErrorHandler):
         if not update:
             logger.warning("Нет update для уведомления пользователя")
             return
-
         user_message = (
             "⚠️ Произошла ошибка!\n\n"
             "Пожалуйста, сделайте скриншот этого сообщения и отправьте его администратору, описав, что вы делали перед ошибкой.\n"
             "Спасибо за помощь в улучшении бота! 😊"
         )
-
         try:
             if update.message:
                 await update.message.answer(user_message)
@@ -179,7 +140,6 @@ class MyHandler(ErrorHandler):
     async def _notify_admins(self, error_info: ErrorInfo) -> None:
         """Отправка уведомления администраторам"""
         user_id, user_name, user_message = error_info.get_user_info()
-
         admin_message = (
             f"⚠️ <b>Ошибка в боте!</b>\n\n"
             f"⏰ <b>Время:</b> {error_info.error_time}\n\n"
@@ -191,19 +151,12 @@ class MyHandler(ErrorHandler):
             f"📍 <b>Местоположение:</b>\n{error_info.error_location}\n\n"
             f"📚 <b>Трейсбек:</b>\n<pre>{error_info.traceback_snippet}</pre>"
         )
-
         bot: Bot = self.bot
         FOR_LOGS = os.getenv("FOR_LOGS")
         try:
-            await bot.send_message(
-                FOR_LOGS,
-                admin_message,
-                parse_mode="HTML",
-            )
+            await bot.send_message(FOR_LOGS, admin_message, parse_mode="HTML")
             logger.info("Сообщение отправлено администратору %s", FOR_LOGS)
         except Exception as e:
             logger.error(
-                "Не удалось отправить сообщение владельцу %s: %s",
-                FOR_LOGS,
-                str(e),
+                "Не удалось отправить сообщение владельцу %s: %s", FOR_LOGS, str(e)
             )

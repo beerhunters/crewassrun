@@ -39,11 +39,23 @@ async def get_user_by_id(session: AsyncSession, telegram_id: int, chat_id: int):
     return result.scalars().first()
 
 
+# @with_session
+# async def add_user_to_game(session: AsyncSession, telegram_id: int):
+#     """Добавление пользователя в игру."""
+#     result = await session.execute(select(User).where(User.telegram_id == telegram_id))
+#     user = result.scalars().first()
+#     if user and not user.in_game:
+#         user.in_game = True
+#         await session.commit()
+#         return True
+#     return False
 @with_session
-async def add_user_to_game(session: AsyncSession, telegram_id: int):
-    """Добавление пользователя в игру."""
-    result = await session.execute(select(User).where(User.telegram_id == telegram_id))
-    user = result.scalars().first()
+async def add_user_to_game(session: AsyncSession, telegram_id: int, chat_id: int):
+    """Включение пользователя в игру."""
+    user = await session.execute(
+        select(User).where(User.telegram_id == telegram_id, User.chat_id == chat_id)
+    )
+    user = user.scalar_one_or_none()
     if user and not user.in_game:
         user.in_game = True
         await session.commit()
@@ -212,3 +224,12 @@ async def remove_user_from_game(session: AsyncSession, telegram_id: int, chat_id
         await session.commit()
         return True
     return False
+
+
+@with_session
+async def get_active_chat_ids(session: AsyncSession):
+    """Получение списка уникальных chat_id, где есть активные пользователи."""
+    result = await session.execute(
+        select(User.chat_id).where(User.in_game == True).distinct()
+    )
+    return [row[0] for row in result.fetchall()]
