@@ -165,4 +165,5 @@ cython_debug/
 migrations/versions/
 # Или конкретнее
 migrations/versions/*.py
-.DS_Store!/ecosystem.config.js
+.DS_Store!/
+ecosystem.config.js
