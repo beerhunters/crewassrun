@@ -101,7 +101,6 @@ async def start(message: Message):
         username=from_user.username,
         full_name=from_user.full_name,
         chat_id=chat_id,
-        in_game=False,  # По умолчанию не в игре, пусть активируется через /play
     )
 
     display_name = (
