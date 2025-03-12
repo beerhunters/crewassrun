@@ -263,3 +263,72 @@ async def get_all_buns(session: AsyncSession):
     return {
         bun.name: bun.points for bun in buns
     }  # Возвращаем словарь вида {name: points}
+
+
+@with_session
+async def add_bun(session: AsyncSession, name: str, points: int):
+    """Добавление новой булочки в таблицу buns."""
+    try:
+        bun = Bun(name=name, points=points)
+        session.add(bun)
+        await session.commit()
+        logger.info(f"Добавлена булочка: {name} ({points} баллов)")
+        return bun  # Возвращаем объект Bun для подтверждения
+    except IntegrityError:
+        await session.rollback()
+        logger.warning(f"Булочка '{name}' уже существует")
+        return None  # Возвращаем None, если булочка уже есть
+
+
+@with_session
+async def edit_bun(session: AsyncSession, name: str, points: int):
+    """Редактирование баллов существующей булочки."""
+    bun = await session.execute(select(Bun).where(Bun.name == name))
+    bun = bun.scalar_one_or_none()
+    if bun:
+        bun.points = points
+        await session.commit()
+        logger.info(f"Обновлена булочка: {name} ({points} баллов)")
+        return bun
+    logger.warning(f"Булочка '{name}' не найдена для редактирования")
+    return None
+
+
+@with_session
+async def remove_bun(session: AsyncSession, name: str):
+    """Удаление булочки из таблицы buns."""
+    bun = await session.execute(select(Bun).where(Bun.name == name))
+    bun = bun.scalar_one_or_none()
+    if bun:
+        await session.delete(bun)
+        await session.commit()
+        logger.info(f"Удалена булочка: {name}")
+        return True
+    logger.warning(f"Булочка '{name}' не найдена для удаления")
+    return False
+
+
+# @with_session
+# async def update_bun_points(
+#     session: AsyncSession, bun_name: str, new_points_per_bun: int
+# ):
+#     """Обновление баллов для всех записей с указанной булочкой в user_buns."""
+#     # Получаем все записи с указанной булочкой
+#     result = await session.execute(select(UserBun).where(UserBun.bun == bun_name))
+#     user_buns = result.scalars().all()
+#
+#     if not user_buns:
+#         logger.info(f"Записей с булочкой '{bun_name}' не найдено в user_buns")
+#         return 0
+#
+#     # Обновляем баллы для каждой записи
+#     updated_count = 0
+#     for user_bun in user_buns:
+#         user_bun.points = user_bun.count * new_points_per_bun
+#         updated_count += 1
+#
+#     await session.commit()
+#     logger.info(
+#         f"Обновлено {updated_count} записей для булочки '{bun_name}' с новыми баллами: {new_points_per_bun} за штуку"
+#     )
+#     return updated_count
