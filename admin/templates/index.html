@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bun Bot Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/adminlte.min.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body class="hold-transition sidebar-mini">
+<div class="wrapper">
+    <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+            </li>
+        </ul>
+    </nav>
+
+    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <a href="/" class="brand-link">
+            <span class="brand-text font-weight-light">Bun Bot Admin</span>
+        </a>
+        <div class="sidebar">
+            <nav class="mt-2">
+                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
+                    <li class="nav-item">
+                        <a href="/" class="nav-link active">
+                            <i class="nav-icon fas fa-tachometer-alt"></i>
+                            <p>Dashboard</p>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </aside>
+
+    <div class="content-wrapper">
+        <section class="content">
+            <div class="container-fluid">
+                <h1 class="mt-4">Bun Bot Admin Panel</h1>
+
+                <!-- Flash-сообщения -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">×</span>
+                                </button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Вкладки -->
+                <ul class="nav nav-tabs" id="adminTab" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_tab == 'users' %}active{% endif %}" id="users-tab" data-toggle="tab" href="#users" role="tab" aria-controls="users" aria-selected="{{ 'true' if active_tab == 'users' else 'false' }}">Пользователи</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_tab == 'buns' %}active{% endif %}" id="buns-tab" data-toggle="tab" href="#buns" role="tab" aria-controls="buns" aria-selected="{{ 'true' if active_tab == 'buns' else 'false' }}">Булочки</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_tab == 'results' %}active{% endif %}" id="results-tab" data-toggle="tab" href="#results" role="tab" aria-controls="results" aria-selected="{{ 'true' if active_tab == 'results' else 'false' }}">Результаты</a>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="adminTabContent">
+                    <!-- Вкладка Пользователи -->
+                    <div class="tab-pane fade {% if active_tab == 'users' %}show active{% endif %}" id="users" role="tabpanel" aria-labelledby="users-tab">
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h3 class="card-title">Пользователи</h3>
+                            </div>
+                            <div class="card-body">
+                                {% if users %}
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Telegram ID</th>
+                                            <th>Username</th>
+                                            <th>Full Name</th>
+                                            <th>Chat ID</th>
+                                            <th>In Game</th>
+                                            <th>Действия</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for user in users %}
+                                        <tr>
+                                            <td>{{ user['id'] }}</td>
+                                            <td>{{ user['telegram_id'] }}</td>
+                                            <td>{{ user['username'] }}</td>
+                                            <td>{{ user['full_name'] }}</td>
+                                            <td>{{ user['chat_id'] }}</td>
+                                            <td>{{ user['in_game'] }}</td>
+                                            <td>
+                                                <a href="{{ url_for('delete_user', telegram_id=user['telegram_id'], chat_id=user['chat_id']) }}" class="btn btn-danger btn-sm">Удалить</a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                {% else %}
+                                <p>Пользователей пока нет.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Вкладка Булочки -->
+                    <div class="tab-pane fade {% if active_tab == 'buns' %}show active{% endif %}" id="buns" role="tabpanel" aria-labelledby="buns-tab">
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h3 class="card-title">Булочки</h3>
+                            </div>
+                            <div class="card-body">
+                                <form method="post" action="{{ url_for('add_bun') }}" class="mb-3">
+                                    <div class="input-group">
+                                        <input type="text" name="name" class="form-control" placeholder="Название булочки" required>
+                                        <input type="number" name="points" class="form-control" placeholder="Баллы" required>
+                                        <button type="submit" class="btn btn-primary">Добавить</button>
+                                    </div>
+                                </form>
+                                {% if buns %}
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Название</th>
+                                            <th>Баллы</th>
+                                            <th>Действия</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for bun in buns %}
+                                        <tr>
+                                            <td>{{ bun['name'] }}</td>
+                                            <td>
+                                                <form method="post" action="{{ url_for('edit_bun', name=bun['name']) }}" class="d-inline">
+                                                    <input type="number" name="points" value="{{ bun['points'] }}" class="form-control d-inline" style="width: 100px;">
+                                                    <button type="submit" class="btn btn-warning btn-sm">Сохранить</button>
+                                                </form>
+                                            </td>
+                                            <td>
+                                                <a href="{{ url_for('delete_bun', name=bun['name']) }}" class="btn btn-danger btn-sm">Удалить</a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                {% else %}
+                                <p>Булочек пока нет.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Вкладка Результаты -->
+                    <div class="tab-pane fade {% if active_tab == 'results' %}show active{% endif %}" id="results" role="tabpanel" aria-labelledby="results-tab">
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h3 class="card-title">Результаты</h3>
+                            </div>
+                            <div class="card-body">
+                                {% if user_buns %}
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Username</th>
+                                            <th>Булочка</th>
+                                            <th>Chat ID</th>
+                                            <th>Количество</th>
+                                            <th>Баллы</th>
+                                            <th>Действия</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for ub in user_buns %}
+                                        <tr>
+                                            <td>{{ ub['id'] }}</td>
+                                            <td>{{ ub['username'] }}</td>
+                                            <td>{{ ub['bun'] }}</td>
+                                            <td>{{ ub['chat_id'] }}</td>
+                                            <td>
+                                                <form method="post" action="{{ url_for('edit_user_bun', id=ub['id']) }}" class="d-inline">
+                                                    <input type="number" name="count" value="{{ ub['count'] }}" class="form-control d-inline" style="width: 100px;">
+                                                    <button type="submit" class="btn btn-warning btn-sm">Сохранить</button>
+                                                </form>
+                                            </td>
+                                            <td>{{ ub['points'] }}</td>
+                                            <td>
+                                                <a href="{{ url_for('delete_user_bun', id=ub['id']) }}" class="btn btn-danger btn-sm">Удалить</a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                {% else %}
+                                <p>Результатов пока нет.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/adminlte.min.js') }}"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
