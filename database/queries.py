@@ -79,39 +79,6 @@ async def get_random_user(session: AsyncSession, chat_id: int):
     return random.choice(users) if users else None
 
 
-# @with_session
-# async def add_or_update_user_bun(
-#     session: AsyncSession, user_id: int, bun: str, chat_id: int
-# ):
-#     """Добавление или обновление записи о булочке для пользователя с учетом очков."""
-#     from buns_data import BUNS_POINTS  # Импортируем внутри функции, если нужно
-#
-#     points_per_bun = BUNS_POINTS.get(bun, 0)  # Очки за одну булочку, по умолчанию 0
-#     try:
-#         result = await session.execute(
-#             select(UserBun).where(
-#                 UserBun.user_id == user_id,
-#                 UserBun.bun == bun,
-#                 UserBun.chat_id == chat_id,
-#             )
-#         )
-#         user_bun = result.scalars().first()
-#         if user_bun:
-#             user_bun.count += 1
-#             user_bun.points = user_bun.count * points_per_bun  # Обновляем очки
-#         else:
-#             session.add(
-#                 UserBun(
-#                     user_id=user_id,
-#                     bun=bun,
-#                     chat_id=chat_id,
-#                     count=1,
-#                     points=points_per_bun,  # Начальные очки для новой булочки
-#                 )
-#             )
-#         await session.commit()
-#     except IntegrityError:
-#         await session.rollback()
 @with_session
 async def add_or_update_user_bun(
     session: AsyncSession, user_id: int, bun: str, chat_id: int
