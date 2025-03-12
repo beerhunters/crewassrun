@@ -14,8 +14,10 @@ from handlers.in_game import in_game_r
 from handlers.new_member import new_member_r
 from handlers.random_user import send_random_message
 from handlers.start import start_r
-from logger import logger
+
+# from logger import logger, LoggingMiddleware
 from database.queries import get_active_chat_ids
+from logger import logger
 
 
 async def send_daily_messages(bot: Bot):
@@ -42,6 +44,7 @@ async def main():
     bot = Bot(token=os.getenv("API_TOKEN"))
     dp = Dispatcher()
     dp.include_routers(start_r, new_member_r, in_game_r, admin_cntr, error_router)
+    # dp.update.middleware(dp.update.middleware(LoggingMiddleware()))
     bot_commands = [
         BotCommand(command="/start", description="Запустить бота"),
         BotCommand(command="/play", description="Играть"),
