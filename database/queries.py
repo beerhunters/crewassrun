@@ -2,8 +2,10 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.db import with_session
-from database.models import User, UserBun
+from database.models import User, UserBun, Bun
 import random
+
+from logger import logger
 
 
 @with_session
@@ -39,16 +41,6 @@ async def get_user_by_id(session: AsyncSession, telegram_id: int, chat_id: int):
     return result.scalars().first()
 
 
-# @with_session
-# async def add_user_to_game(session: AsyncSession, telegram_id: int):
-#     """Добавление пользователя в игру."""
-#     result = await session.execute(select(User).where(User.telegram_id == telegram_id))
-#     user = result.scalars().first()
-#     if user and not user.in_game:
-#         user.in_game = True
-#         await session.commit()
-#         return True
-#     return False
 @with_session
 async def add_user_to_game(session: AsyncSession, telegram_id: int, chat_id: int):
     """Включение пользователя в игру."""
@@ -87,15 +79,56 @@ async def get_random_user(session: AsyncSession, chat_id: int):
     return random.choice(users) if users else None
 
 
+# @with_session
+# async def add_or_update_user_bun(
+#     session: AsyncSession, user_id: int, bun: str, chat_id: int
+# ):
+#     """Добавление или обновление записи о булочке для пользователя с учетом очков."""
+#     from buns_data import BUNS_POINTS  # Импортируем внутри функции, если нужно
+#
+#     points_per_bun = BUNS_POINTS.get(bun, 0)  # Очки за одну булочку, по умолчанию 0
+#     try:
+#         result = await session.execute(
+#             select(UserBun).where(
+#                 UserBun.user_id == user_id,
+#                 UserBun.bun == bun,
+#                 UserBun.chat_id == chat_id,
+#             )
+#         )
+#         user_bun = result.scalars().first()
+#         if user_bun:
+#             user_bun.count += 1
+#             user_bun.points = user_bun.count * points_per_bun  # Обновляем очки
+#         else:
+#             session.add(
+#                 UserBun(
+#                     user_id=user_id,
+#                     bun=bun,
+#                     chat_id=chat_id,
+#                     count=1,
+#                     points=points_per_bun,  # Начальные очки для новой булочки
+#                 )
+#             )
+#         await session.commit()
+#     except IntegrityError:
+#         await session.rollback()
 @with_session
 async def add_or_update_user_bun(
     session: AsyncSession, user_id: int, bun: str, chat_id: int
 ):
     """Добавление или обновление записи о булочке для пользователя с учетом очков."""
-    from buns_data import BUNS_POINTS  # Импортируем внутри функции, если нужно
+    # Получаем баллы за булочку из таблицы buns
+    result = await session.execute(select(Bun).where(Bun.name == bun))
+    bun_record = result.scalar_one_or_none()
 
-    points_per_bun = BUNS_POINTS.get(bun, 0)  # Очки за одну булочку, по умолчанию 0
+    if not bun_record:
+        logger.error(f"Булочка '{bun}' не найдена в таблице buns")
+        return  # Или можно выбросить исключение, если это критично
+
+    points_per_bun = bun_record.points  # Баллы за одну булочку из базы
+
     try:
+        # Проверяем, есть ли уже запись для этой булочки у пользователя
         result = await session.execute(
             select(UserBun).where(
                 UserBun.user_id == user_id,
@@ -103,23 +136,43 @@ async def add_or_update_user_bun(
                 UserBun.chat_id == chat_id,
             )
         )
-        user_bun = result.scalars().first()
+        user_bun = result.scalar_one_or_none()
+
         if user_bun:
+            # Если запись существует, увеличиваем счётчик и пересчитываем очки
             user_bun.count += 1
-            user_bun.points = user_bun.count * points_per_bun  # Обновляем очки
-        else:
-            session.add(
-                UserBun(
-                    user_id=user_id,
-                    bun=bun,
-                    chat_id=chat_id,
-                    count=1,
-                    points=points_per_bun,  # Начальные очки для новой булочки
-                )
+            user_bun.points = user_bun.count * points_per_bun
+            logger.debug(
+                f"Обновлена запись для user_id={user_id}, bun={bun}, count={user_bun.count}, points={user_bun.points}"
             )
+        else:
+            # Если записи нет, создаём новую
+            user_bun = UserBun(
+                user_id=user_id,
+                bun=bun,
+                chat_id=chat_id,
+                count=1,
+                points=points_per_bun,
+            )
+            session.add(user_bun)
+            logger.info(
+                f"Добавлена новая булочка '{bun}' для user_id={user_id} в чате {chat_id}"
+            )
+
         await session.commit()
-    except IntegrityError:
+        return user_bun  # Можно вернуть объект для дальнейшего использования
+    except IntegrityError as e:
         await session.rollback()
+        logger.error(
+            f"Ошибка целостности при добавлении булочки '{bun}' для user_id={user_id}: {e}"
+        )
+        raise
+    except Exception as e:
+        await session.rollback()
+        logger.error(
+            f"Неизвестная ошибка при обновлении булочки '{bun}' для user_id={user_id}: {e}"
+        )
+        raise
 
 
 @with_session
@@ -233,3 +286,13 @@ async def get_active_chat_ids(session: AsyncSession):
         select(User.chat_id).where(User.in_game == True).distinct()
     )
     return [row[0] for row in result.fetchall()]
+
+
+@with_session
+async def get_all_buns(session: AsyncSession):
+    """Получение всех булочек из таблицы buns."""
+    result = await session.execute(select(Bun))
+    buns = result.scalars().all()
+    return {
+        bun.name: bun.points for bun in buns
+    }  # Возвращаем словарь вида {name: points}

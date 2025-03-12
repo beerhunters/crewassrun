@@ -105,8 +105,12 @@ async def main():
     try:
         try:
             # Запускаем задачу отправки сообщений каждое утро в 9:00
+            # cron_task = aiocron.crontab(
+            #     "0 9 * * *",
+            #     func=lambda: asyncio.create_task(send_daily_messages(bot)),
+            # )
             cron_task = aiocron.crontab(
-                "0 9 * * *",
+                "* * * * *",
                 func=lambda: asyncio.create_task(send_daily_messages(bot)),
             )
             # cron_task = aiocron.crontab(

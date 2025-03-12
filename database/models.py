@@ -34,3 +34,13 @@ class UserBun(Base):
             "user_id", "bun", "chat_id", name="unique_user_bun_chat"
         ),  # Уникальность связки
     )
+
+
+class Bun(Base):
+    """Модель булочек с их баллами."""
+
+    __tablename__ = "buns"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, unique=True)  # Название булочки, уникальное
+    points = Column(Integer, nullable=False)  # Баллы за булочку
