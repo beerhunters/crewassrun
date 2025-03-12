@@ -1,14 +1,11 @@
-import os
-
 from aiogram import Router, types
 from aiogram.filters import Command
-from dotenv import load_dotenv
 
 from database.queries import get_all_users, remove_user_from_game
 
-load_dotenv()
-ALLOWED_ADMIN_ID = os.getenv("ALLOWED_ADMIN_ID")
 admin_cntr = Router()
+
+ALLOWED_ADMIN_ID = 267863612  # ID администратора
 
 
 @admin_cntr.message(Command(commands="user_list"))
