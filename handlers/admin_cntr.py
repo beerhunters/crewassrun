@@ -147,7 +147,9 @@ async def remove_from_game_handler(message: types.Message):
     # Ожидаем два аргумента: chat_id и порядковый номер в чате
     args = message.text.split()[1:]  # Пропускаем саму команду
     if len(args) != 2:
-        await message.reply("Использование: /remove_from_game <chat_id> <порядковый_номер>")
+        await message.reply(
+            "Использование: /remove_from_game <chat_id> <порядковый_номер>"
+        )
         return
 
     try:
@@ -191,6 +193,7 @@ async def remove_from_game_handler(message: types.Message):
         await message.reply(
             f"Пользователь {display_name} (ID: {telegram_id}) уже не в игре в чате {chat_id}."
         )
+
 
 @admin_cntr.message(Command(commands="list_buns"))
 async def list_buns_handler(message: types.Message):
