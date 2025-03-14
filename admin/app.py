@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 import aiohttp
 import asyncio
 import logging
+from math import ceil
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -38,6 +39,14 @@ async def put_data(endpoint, data):
             return await response.json()
 
 
+def paginate(data, page, per_page):
+    total = len(data)
+    total_pages = ceil(total / per_page)
+    start = (page - 1) * per_page
+    end = start + per_page
+    return data[start:end], total_pages
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -56,7 +65,17 @@ def users():
         users = []
     finally:
         loop.close()
-    return render_template("users.html", users=users)
+
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 10))  # По умолчанию 10
+    paginated_users, total_pages = paginate(users, page, per_page)
+    return render_template(
+        "users.html",
+        users=paginated_users,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+    )
 
 
 @app.route("/buns")
@@ -72,7 +91,17 @@ def buns():
         buns = []
     finally:
         loop.close()
-    return render_template("buns.html", buns=buns)
+
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 10))
+    paginated_buns, total_pages = paginate(buns, page, per_page)
+    return render_template(
+        "buns.html",
+        buns=paginated_buns,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+    )
 
 
 @app.route("/results")
@@ -94,9 +123,20 @@ def results():
         user_buns = []
     finally:
         loop.close()
-    return render_template("results.html", user_buns=user_buns)
+
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 10))
+    paginated_user_buns, total_pages = paginate(user_buns, page, per_page)
+    return render_template(
+        "results.html",
+        user_buns=paginated_user_buns,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+    )
 
 
+# Остальные маршруты остаются без изменений
 @app.route("/delete_user/<int:telegram_id>/<chat_id>")
 def delete_user(telegram_id, chat_id):
     loop = asyncio.new_event_loop()
