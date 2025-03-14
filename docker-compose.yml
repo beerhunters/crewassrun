@@ -57,11 +57,8 @@ services:
       - admin
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./letsencrypt:/etc/letsencrypt
-      - ./www:/var/www/html  # Для проверки Let's Encrypt
     restart: unless-stopped
 
 volumes:
   db_data:
   logs:
-  letsencrypt:
