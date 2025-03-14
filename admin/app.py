@@ -4,6 +4,11 @@ import aiohttp
 import asyncio
 import logging
 
+import sys
+from pathlib import Path
+
+# Добавляем корень проекта в sys.path
+sys.path.append(str(Path(__file__).parent.parent))
 from config import API_URL
 
 logging.basicConfig(level=logging.DEBUG)
