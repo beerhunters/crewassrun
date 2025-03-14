@@ -112,7 +112,7 @@ async def user_list_handler(message: types.Message, bot):
             chat_title = f"Чат {chat_id} (ошибка получения названия: {str(e)})"
 
         chat_users = sorted(users_by_chat[chat_id], key=lambda x: x["telegram_id"])
-        header = f"<b>{chat_title} (ID: {chat_id}):</b>\n"
+        header = f"<b>{chat_title} (ID: <code>{chat_id}</code>):</b>\n"
         current_message = header
         user_count = 0
 
