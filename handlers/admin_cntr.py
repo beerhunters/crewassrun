@@ -118,13 +118,19 @@ async def user_list_handler(message: types.Message, bot):
 
         for user in chat_users:
             user_count += 1
-            display_name = f"@{user['username']}" if user["username"] else user["full_name"]
+            display_name = (
+                f"@{user['username']}" if user["username"] else user["full_name"]
+            )
             status = "✅ в игре" if user["in_game"] else "❌ не в игре"
-            user_line = f"{user_count}. {display_name} (ID: {user['telegram_id']}) — {status}\n"
+            user_line = (
+                f"{user_count}. {display_name} (ID: {user['telegram_id']}) — {status}\n"
+            )
 
             if len(current_message) + len(user_line) > MAX_MESSAGE_LENGTH:
                 messages.append(current_message)
-                current_message = f"<b>{chat_title} (ID: {chat_id}, продолжение):</b>\n" + user_line
+                current_message = (
+                    f"<b>{chat_title} (ID: {chat_id}, продолжение):</b>\n" + user_line
+                )
             else:
                 current_message += user_line
 
@@ -138,6 +144,7 @@ async def user_list_handler(message: types.Message, bot):
     for msg in messages:
         await message.reply(msg, parse_mode="HTML")
         await asyncio.sleep(0.5)
+
 
 # @admin_cntr.message(Command(commands="remove_from_game"))
 # async def remove_from_game_handler(message: types.Message):
