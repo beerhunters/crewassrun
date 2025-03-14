@@ -12,6 +12,7 @@ from database.queries import (
     add_bun,
 )
 from handlers.in_game import pluralize_points
+from collections import defaultdict
 
 admin_cntr = Router()
 
@@ -63,16 +64,22 @@ async def user_list_handler(message: types.Message):
 
     # Обрабатываем каждый чат
     for chat_id in sorted(users_by_chat.keys()):
-        chat_users = sorted(users_by_chat[chat_id], key=lambda x: x["telegram_id"])  # Сортировка по telegram_id
+        chat_users = sorted(
+            users_by_chat[chat_id], key=lambda x: x["telegram_id"]
+        )  # Сортировка по telegram_id
         header = f"<b>Чат {chat_id}:</b>\n"
         current_message = header
         user_count = 0
 
         for user in chat_users:
             user_count += 1
-            display_name = f"@{user['username']}" if user["username"] else user["full_name"]
+            display_name = (
+                f"@{user['username']}" if user["username"] else user["full_name"]
+            )
             status = "✅ в игре" if user["in_game"] else "❌ не в игре"
-            user_line = f"{user_count}. {display_name} (ID: {user['telegram_id']}) — {status}\n"
+            user_line = (
+                f"{user_count}. {display_name} (ID: {user['telegram_id']}) — {status}\n"
+            )
 
             # Проверяем превышение лимита
             if len(current_message) + len(user_line) > MAX_MESSAGE_LENGTH:
