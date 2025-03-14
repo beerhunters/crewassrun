@@ -1,3 +1,5 @@
+import asyncio
+
 from aiogram import Router, types
 from aiogram.filters import Command
 
@@ -38,7 +40,7 @@ ALLOWED_ADMIN_ID = 267863612  # ID администратора
 #     await message.reply(response, parse_mode="HTML")
 @admin_cntr.message(Command(commands="user_list"))
 async def user_list_handler(message: types.Message):
-    """Вывод списка всех пользователей (только для admin в ЛС)."""
+    """Вывод списка всех пользователей по чатам (только для admin в ЛС)."""
     if message.chat.type != "private" or message.from_user.id != ALLOWED_ADMIN_ID:
         await message.reply(
             "Эта команда доступна только администратору в личных сообщениях!"
@@ -50,31 +52,48 @@ async def user_list_handler(message: types.Message):
         await message.reply("Пользователей в базе нет.")
         return
 
-    # Максимальная длина одного сообщения в Telegram
+    # Группируем пользователей по chat_id
+    users_by_chat = defaultdict(list)
+    for user in users:
+        users_by_chat[user["chat_id"]].append(user)
+
+    # Максимальная длина сообщения в Telegram
     MAX_MESSAGE_LENGTH = 4096
-    response = "<b>Список пользователей:</b>\n\n"
     messages = []  # Список для хранения частей сообщения
-    current_message = response
 
-    for i, user in enumerate(users, start=1):
-        display_name = f"@{user['username']}" if user["username"] else user["full_name"]
-        status = "в игре" if user["in_game"] else "не в игре"
-        user_line = f"{i}. {display_name} (ID: {user['telegram_id']}, Чат: {user['chat_id']}) - {status}\n"
+    # Обрабатываем каждый чат
+    for chat_id in sorted(users_by_chat.keys()):
+        chat_users = sorted(users_by_chat[chat_id], key=lambda x: x["telegram_id"])  # Сортировка по telegram_id
+        header = f"<b>Чат {chat_id}:</b>\n"
+        current_message = header
+        user_count = 0
 
-        # Проверяем, превысит ли добавление строки лимит
-        if len(current_message) + len(user_line) > MAX_MESSAGE_LENGTH:
+        for user in chat_users:
+            user_count += 1
+            display_name = f"@{user['username']}" if user["username"] else user["full_name"]
+            status = "✅ в игре" if user["in_game"] else "❌ не в игре"
+            user_line = f"{user_count}. {display_name} (ID: {user['telegram_id']}) — {status}\n"
+
+            # Проверяем превышение лимита
+            if len(current_message) + len(user_line) > MAX_MESSAGE_LENGTH:
+                messages.append(current_message)
+                current_message = f"<b>Чат {chat_id} (продолжение):</b>\n" + user_line
+            else:
+                current_message += user_line
+
+        # Добавляем остаток текущего чата
+        if current_message != header:
             messages.append(current_message)
-            current_message = user_line  # Начинаем новое сообщение
-        else:
-            current_message += user_line
 
-    # Добавляем последнее сообщение, если оно не пустое
-    if current_message != response:
-        messages.append(current_message)
+    # Если сообщений нет (маловероятно, но для проверки)
+    if not messages:
+        await message.reply("Не удалось сформировать список пользователей.")
+        return
 
     # Отправляем все части
     for msg in messages:
         await message.reply(msg, parse_mode="HTML")
+        await asyncio.sleep(0.5)  # Задержка для избежания лимитов Telegram
 
 
 @admin_cntr.message(Command(commands="remove_from_game"))
