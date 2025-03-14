@@ -19,9 +19,71 @@ admin_cntr = Router()
 ALLOWED_ADMIN_ID = 267863612  # ID администратора
 
 
+# @admin_cntr.message(Command(commands="user_list"))
+# async def user_list_handler(message: types.Message):
+#     """Вывод списка всех пользователей по чатам (только для admin в ЛС)."""
+#     if message.chat.type != "private" or message.from_user.id != ALLOWED_ADMIN_ID:
+#         await message.reply(
+#             "Эта команда доступна только администратору в личных сообщениях!"
+#         )
+#         return
+#
+#     users = await get_all_users()
+#     if not users:
+#         await message.reply("Пользователей в базе нет.")
+#         return
+#
+#     # Группируем пользователей по chat_id
+#     users_by_chat = defaultdict(list)
+#     for user in users:
+#         users_by_chat[user["chat_id"]].append(user)
+#
+#     # Максимальная длина сообщения в Telegram
+#     MAX_MESSAGE_LENGTH = 4096
+#     messages = []  # Список для хранения частей сообщения
+#
+#     # Обрабатываем каждый чат
+#     for chat_id in sorted(users_by_chat.keys()):
+#         chat_users = sorted(
+#             users_by_chat[chat_id], key=lambda x: x["telegram_id"]
+#         )  # Сортировка по telegram_id
+#         header = f"<b>Чат <code>{chat_id}</code>:</b>\n"
+#         current_message = header
+#         user_count = 0
+#
+#         for user in chat_users:
+#             user_count += 1
+#             display_name = (
+#                 f"@{user['username']}" if user["username"] else user["full_name"]
+#             )
+#             status = "✅ в игре" if user["in_game"] else "❌ не в игре"
+#             user_line = (
+#                 f"{user_count}. {display_name} (ID: {user['telegram_id']}) — {status}\n"
+#             )
+#
+#             # Проверяем превышение лимита
+#             if len(current_message) + len(user_line) > MAX_MESSAGE_LENGTH:
+#                 messages.append(current_message)
+#                 current_message = f"<b>Чат {chat_id} (продолжение):</b>\n" + user_line
+#             else:
+#                 current_message += user_line
+#
+#         # Добавляем остаток текущего чата
+#         if current_message != header:
+#             messages.append(current_message)
+#
+#     # Если сообщений нет (маловероятно, но для проверки)
+#     if not messages:
+#         await message.reply("Не удалось сформировать список пользователей.")
+#         return
+#
+#     # Отправляем все части
+#     for msg in messages:
+#         await message.reply(msg, parse_mode="HTML")
+#         await asyncio.sleep(0.5)  # Задержка для избежания лимитов Telegram
 @admin_cntr.message(Command(commands="user_list"))
-async def user_list_handler(message: types.Message):
-    """Вывод списка всех пользователей по чатам (только для admin в ЛС)."""
+async def user_list_handler(message: types.Message, bot):
+    """Вывод списка всех пользователей по чатам с названиями чатов (только для admin в ЛС)."""
     if message.chat.type != "private" or message.from_user.id != ALLOWED_ADMIN_ID:
         await message.reply(
             "Эта команда доступна только администратору в личных сообщениях!"
@@ -38,50 +100,44 @@ async def user_list_handler(message: types.Message):
     for user in users:
         users_by_chat[user["chat_id"]].append(user)
 
-    # Максимальная длина сообщения в Telegram
     MAX_MESSAGE_LENGTH = 4096
-    messages = []  # Список для хранения частей сообщения
+    messages = []
 
     # Обрабатываем каждый чат
     for chat_id in sorted(users_by_chat.keys()):
-        chat_users = sorted(
-            users_by_chat[chat_id], key=lambda x: x["telegram_id"]
-        )  # Сортировка по telegram_id
-        header = f"<b>Чат <code>{chat_id}</code>:</b>\n"
+        try:
+            chat = await bot.get_chat(chat_id)
+            chat_title = chat.title if chat.title else f"Чат {chat_id}"
+        except Exception as e:
+            chat_title = f"Чат {chat_id} (ошибка получения названия: {str(e)})"
+
+        chat_users = sorted(users_by_chat[chat_id], key=lambda x: x["telegram_id"])
+        header = f"<b>{chat_title} (ID: {chat_id}):</b>\n"
         current_message = header
         user_count = 0
 
         for user in chat_users:
             user_count += 1
-            display_name = (
-                f"@{user['username']}" if user["username"] else user["full_name"]
-            )
+            display_name = f"@{user['username']}" if user["username"] else user["full_name"]
             status = "✅ в игре" if user["in_game"] else "❌ не в игре"
-            user_line = (
-                f"{user_count}. {display_name} (ID: {user['telegram_id']}) — {status}\n"
-            )
+            user_line = f"{user_count}. {display_name} (ID: {user['telegram_id']}) — {status}\n"
 
-            # Проверяем превышение лимита
             if len(current_message) + len(user_line) > MAX_MESSAGE_LENGTH:
                 messages.append(current_message)
-                current_message = f"<b>Чат {chat_id} (продолжение):</b>\n" + user_line
+                current_message = f"<b>{chat_title} (ID: {chat_id}, продолжение):</b>\n" + user_line
             else:
                 current_message += user_line
 
-        # Добавляем остаток текущего чата
         if current_message != header:
             messages.append(current_message)
 
-    # Если сообщений нет (маловероятно, но для проверки)
     if not messages:
         await message.reply("Не удалось сформировать список пользователей.")
         return
 
-    # Отправляем все части
     for msg in messages:
         await message.reply(msg, parse_mode="HTML")
-        await asyncio.sleep(0.5)  # Задержка для избежания лимитов Telegram
-
+        await asyncio.sleep(0.5)
 
 # @admin_cntr.message(Command(commands="remove_from_game"))
 # async def remove_from_game_handler(message: types.Message):
