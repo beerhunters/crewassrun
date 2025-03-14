@@ -4,12 +4,12 @@ import aiohttp
 import asyncio
 import logging
 
-import sys
-from pathlib import Path
-
-# Добавляем корень проекта в sys.path
-sys.path.append(str(Path(__file__).parent))
-from config import API_URL
+# import sys
+# from pathlib import Path
+#
+# # Добавляем корень проекта в sys.path
+# sys.path.append(str(Path(__file__).parent))
+# from config import API_URL
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ app.secret_key = "your_secret_key_here"
 
 
 # API_URL = "http://127.0.0.1:8000"
-# API_URL = "http://api:8000"  # Оставляем так, так как внутри сети Docker
+API_URL = "http://api:8000"  # Оставляем так, так как внутри сети Docker
 
 
 async def fetch_data(endpoint):
