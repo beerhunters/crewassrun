@@ -48,17 +48,17 @@ services:
       - migrate
     restart: unless-stopped
 
-  migrate:
-    build:
-      context: .
-      dockerfile: Dockerfile.migrate
-    container_name: migrate
-    volumes:
-      - ./db.sqlite3:/app/db.sqlite3
-      - ./migrations:/app/migrations
-    environment:
-      - PYTHONPATH=/app
-    restart: on-failure
+#  migrate:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.migrate
+#    container_name: migrate
+#    volumes:
+#      - ./db.sqlite3:/app/db.sqlite3
+#      - ./migrations:/app/migrations
+#    environment:
+#      - PYTHONPATH=/app
+#    restart: on-failure
 
   nginx:
     build:
