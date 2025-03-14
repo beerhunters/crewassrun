@@ -3,6 +3,7 @@ import asyncio
 from aiogram import Router, types
 from aiogram.filters import Command
 
+from config import ADMIN
 from database.queries import (
     get_all_users,
     remove_user_from_game,
@@ -16,75 +17,15 @@ from collections import defaultdict
 
 admin_cntr = Router()
 
-ALLOWED_ADMIN_ID = 267863612  # ID администратора
+ADMIN = int(ADMIN)
 
 
-# @admin_cntr.message(Command(commands="user_list"))
-# async def user_list_handler(message: types.Message):
-#     """Вывод списка всех пользователей по чатам (только для admin в ЛС)."""
-#     if message.chat.type != "private" or message.from_user.id != ALLOWED_ADMIN_ID:
-#         await message.reply(
-#             "Эта команда доступна только администратору в личных сообщениях!"
-#         )
-#         return
-#
-#     users = await get_all_users()
-#     if not users:
-#         await message.reply("Пользователей в базе нет.")
-#         return
-#
-#     # Группируем пользователей по chat_id
-#     users_by_chat = defaultdict(list)
-#     for user in users:
-#         users_by_chat[user["chat_id"]].append(user)
-#
-#     # Максимальная длина сообщения в Telegram
-#     MAX_MESSAGE_LENGTH = 4096
-#     messages = []  # Список для хранения частей сообщения
-#
-#     # Обрабатываем каждый чат
-#     for chat_id in sorted(users_by_chat.keys()):
-#         chat_users = sorted(
-#             users_by_chat[chat_id], key=lambda x: x["telegram_id"]
-#         )  # Сортировка по telegram_id
-#         header = f"<b>Чат <code>{chat_id}</code>:</b>\n"
-#         current_message = header
-#         user_count = 0
-#
-#         for user in chat_users:
-#             user_count += 1
-#             display_name = (
-#                 f"@{user['username']}" if user["username"] else user["full_name"]
-#             )
-#             status = "✅ в игре" if user["in_game"] else "❌ не в игре"
-#             user_line = (
-#                 f"{user_count}. {display_name} (ID: {user['telegram_id']}) — {status}\n"
-#             )
-#
-#             # Проверяем превышение лимита
-#             if len(current_message) + len(user_line) > MAX_MESSAGE_LENGTH:
-#                 messages.append(current_message)
-#                 current_message = f"<b>Чат {chat_id} (продолжение):</b>\n" + user_line
-#             else:
-#                 current_message += user_line
-#
-#         # Добавляем остаток текущего чата
-#         if current_message != header:
-#             messages.append(current_message)
-#
-#     # Если сообщений нет (маловероятно, но для проверки)
-#     if not messages:
-#         await message.reply("Не удалось сформировать список пользователей.")
-#         return
-#
-#     # Отправляем все части
-#     for msg in messages:
-#         await message.reply(msg, parse_mode="HTML")
-#         await asyncio.sleep(0.5)  # Задержка для избежания лимитов Telegram
 @admin_cntr.message(Command(commands="user_list"))
 async def user_list_handler(message: types.Message, bot):
     """Вывод списка всех пользователей по чатам с названиями чатов (только для admin в ЛС)."""
-    if message.chat.type != "private" or message.from_user.id != ALLOWED_ADMIN_ID:
+    if message.from_user.id != ADMIN:
+        print("Не админ")
+    if message.chat.type != "private" or message.from_user.id != ADMIN:
         await message.reply(
             "Эта команда доступна только администратору в личных сообщениях!"
         )
@@ -146,62 +87,10 @@ async def user_list_handler(message: types.Message, bot):
         await asyncio.sleep(0.5)
 
 
-# @admin_cntr.message(Command(commands="remove_from_game"))
-# async def remove_from_game_handler(message: types.Message):
-#     """Удаление пользователя из розыгрыша по порядковому номеру (только для admin в ЛС)."""
-#     if message.chat.type != "private" or message.from_user.id != ALLOWED_ADMIN_ID:
-#         await message.reply(
-#             "Эта команда доступна только администратору в личных сообщениях!"
-#         )
-#         return
-#
-#     # Ожидаем один аргумент: порядковый номер из списка /user_list
-#     args = message.text.split()[1:]  # Пропускаем саму команду
-#     if len(args) != 1:
-#         await message.reply("Использование: /remove_from_game <порядковый_номер>")
-#         return
-#
-#     try:
-#         user_index = (
-#             int(args[0]) - 1
-#         )  # Преобразуем в индекс (нумерация с 1, индексы с 0)
-#     except ValueError:
-#         await message.reply("Порядковый номер должен быть целым числом!")
-#         return
-#
-#     # Получаем список всех пользователей
-#     users = await get_all_users()
-#     if not users:
-#         await message.reply("Список пользователей пуст.")
-#         return
-#
-#     # Проверяем, что номер в допустимом диапазоне
-#     if user_index < 0 or user_index >= len(users):
-#         await message.reply(
-#             f"Пользователь с номером {user_index + 1} не найден в списке!"
-#         )
-#         return
-#
-#     # Извлекаем данные пользователя по индексу
-#     user = users[user_index]
-#     telegram_id = user["telegram_id"]
-#     chat_id = user["chat_id"]
-#     display_name = f"@{user['username']}" if user["username"] else user["full_name"]
-#
-#     # Удаляем пользователя из розыгрыша
-#     removed = await remove_user_from_game(telegram_id=telegram_id, chat_id=chat_id)
-#     if removed:
-#         await message.reply(
-#             f"Пользователь {display_name} (ID: {telegram_id}) удален из розыгрыша в чате {chat_id}."
-#         )
-#     else:
-#         await message.reply(
-#             f"Пользователь {display_name} (ID: {telegram_id}) уже не в игре в чате {chat_id}."
-#         )
 @admin_cntr.message(Command(commands="remove_from_game"))
 async def remove_from_game_handler(message: types.Message):
     """Удаление пользователя из розыгрыша по chat_id и порядковому номеру в чате (только для admin в ЛС)."""
-    if message.chat.type != "private" or message.from_user.id != ALLOWED_ADMIN_ID:
+    if message.chat.type != "private" or message.from_user.id != ADMIN:
         await message.reply(
             "Эта команда доступна только администратору в личных сообщениях!"
         )
@@ -260,7 +149,7 @@ async def remove_from_game_handler(message: types.Message):
 
 @admin_cntr.message(Command(commands="list_buns"))
 async def list_buns_handler(message: types.Message):
-    if message.chat.type != "private" or message.from_user.id != ALLOWED_ADMIN_ID:
+    if message.chat.type != "private" or message.from_user.id != ADMIN:
         await message.reply("Эта команда доступна только администратору в ЛС!")
         return
     buns = await get_all_buns()
@@ -276,7 +165,7 @@ async def list_buns_handler(message: types.Message):
 @admin_cntr.message(Command(commands="add_bun"))
 async def add_bun_handler(message: types.Message):
     """Добавление новой булочки (только для админа в ЛС)."""
-    if message.chat.type != "private" or message.from_user.id != ALLOWED_ADMIN_ID:
+    if message.chat.type != "private" or message.from_user.id != ADMIN:
         await message.reply(
             "Эта команда доступна только администратору в личных сообщениях!"
         )
@@ -305,7 +194,7 @@ async def add_bun_handler(message: types.Message):
 @admin_cntr.message(Command(commands="edit_bun"))
 async def edit_bun_handler(message: types.Message):
     """Редактирование баллов булочки (только для админа в ЛС)."""
-    if message.chat.type != "private" or message.from_user.id != ALLOWED_ADMIN_ID:
+    if message.chat.type != "private" or message.from_user.id != ADMIN:
         await message.reply(
             "Эта команда доступна только администратору в личных сообщениях!"
         )
@@ -334,7 +223,7 @@ async def edit_bun_handler(message: types.Message):
 @admin_cntr.message(Command(commands="remove_bun"))
 async def remove_bun_handler(message: types.Message):
     """Удаление булочки (только для админа в ЛС)."""
-    if message.chat.type != "private" or message.from_user.id != ALLOWED_ADMIN_ID:
+    if message.chat.type != "private" or message.from_user.id != ADMIN:
         await message.reply(
             "Эта команда доступна только администратору в личных сообщениях!"
         )
@@ -356,7 +245,7 @@ async def remove_bun_handler(message: types.Message):
 @admin_cntr.message(Command(commands="admin_help"))
 async def admin_help_handler(message: types.Message):
     """Вывод списка всех админских команд (только для админа в ЛС)."""
-    if message.chat.type != "private" or message.from_user.id != ALLOWED_ADMIN_ID:
+    if message.chat.type != "private" or message.from_user.id != ADMIN:
         await message.reply(
             "Эта команда доступна только администратору в личных сообщениях!"
         )

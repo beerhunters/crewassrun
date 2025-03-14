@@ -4,13 +4,15 @@ import aiohttp
 import asyncio
 import logging
 
+from config import API_URL
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.secret_key = "your_secret_key_here"
 # API_URL = "http://127.0.0.1:8000"
-API_URL = "http://api:8000"  # Оставляем так, так как внутри сети Docker
+# API_URL = "http://api:8000"  # Оставляем так, так как внутри сети Docker
 
 
 async def fetch_data(endpoint):

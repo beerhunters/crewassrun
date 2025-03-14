@@ -1,13 +1,15 @@
 # main.py
 import asyncio
-import os
+
+# import os
 
 import aiocron
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
 
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
+from config import API_TOKEN
 from handlers.admin_cntr import admin_cntr
 from handlers.exceptions import error_router
 from handlers.in_game import in_game_r
@@ -40,8 +42,9 @@ async def send_daily_messages(bot: Bot):
 
 async def main():
     """Главная функция для запуска бота."""
-    load_dotenv()
-    bot = Bot(token=os.getenv("API_TOKEN"))
+    # load_dotenv()
+    # bot = Bot(token=os.getenv("API_TOKEN"))
+    bot = Bot(token=API_TOKEN)
     dp = Dispatcher()
     dp.include_routers(start_r, new_member_r, in_game_r, admin_cntr, error_router)
     # dp.update.middleware(dp.update.middleware(LoggingMiddleware()))
