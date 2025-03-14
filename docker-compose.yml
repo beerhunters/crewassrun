@@ -14,7 +14,7 @@ services:
       - PYTHONPATH=/app
     depends_on:
       - api
-#      - migrate
+      - migrate
     restart: unless-stopped
 
   api:
@@ -27,8 +27,8 @@ services:
       - ./logs:/app/logs
     environment:
       - PYTHONPATH=/app
-#    depends_on:
-#      - migrate
+    depends_on:
+      - migrate
     restart: unless-stopped
 
   admin:
@@ -45,20 +45,20 @@ services:
       - FLASK_ENV=production
     depends_on:
       - api
-#      - migrate
+      - migrate
     restart: unless-stopped
 
-#  migrate:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile.migrate
-#    container_name: migrate
-#    volumes:
-#      - ./db.sqlite3:/app/db.sqlite3
-#      - ./migrations:/app/migrations
-#    environment:
-#      - PYTHONPATH=/app
-#    restart: on-failure
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrate
+    container_name: migrate
+    volumes:
+      - ./db.sqlite3:/app/db.sqlite3
+      - ./migrations:/app/migrations
+    environment:
+      - PYTHONPATH=/app
+    restart: on-failure
 
   nginx:
     build:
