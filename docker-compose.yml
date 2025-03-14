@@ -19,7 +19,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: api/Dockerfile.api
+      dockerfile: Dockerfile.api
     container_name: api
     volumes:
       - ./db.sqlite3:/app/db.sqlite3
@@ -31,7 +31,7 @@ services:
   admin:
     build:
       context: .
-      dockerfile: admin/Dockerfile.admin
+      dockerfile: Dockerfile.admin
     container_name: admin
     volumes:
       - ./db.sqlite3:/app/db.sqlite3
@@ -43,7 +43,6 @@ services:
     depends_on:
       - api
     restart: unless-stopped
-
 
   nginx:
     build:
@@ -58,8 +57,11 @@ services:
       - admin
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./letsencrypt:/etc/letsencrypt
+      - ./www:/var/www/html  # Для проверки Let's Encrypt
     restart: unless-stopped
 
 volumes:
   db_data:
   logs:
+  letsencrypt:
