@@ -20,7 +20,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile.api
+      dockerfile: api/Dockerfile.api
     container_name: api
     volumes:
       - ./db.sqlite3:/app/db.sqlite3
@@ -34,7 +34,7 @@ services:
   admin:
     build:
       context: .
-      dockerfile: Dockerfile.admin
+      dockerfile: admin/Dockerfile.admin
     container_name: admin
     volumes:
       - ./db.sqlite3:/app/db.sqlite3
