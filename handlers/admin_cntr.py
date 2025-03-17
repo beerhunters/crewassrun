@@ -23,9 +23,9 @@ admin_cntr = Router()
 @admin_cntr.message(Command(commands="user_list"))
 async def user_list_handler(message: types.Message, bot):
     """Вывод списка всех пользователей по чатам с названиями чатов (только для admin в ЛС)."""
-    if message.from_user.id != ADMIN:
+    if message.from_user.id != int(ADMIN):
         print("Не админ")
-    if message.chat.type != "private" or message.from_user.id != ADMIN:
+    if message.chat.type != "private" or message.from_user.id != int(ADMIN):
         await message.reply(
             "Эта команда доступна только администратору в личных сообщениях!"
         )
