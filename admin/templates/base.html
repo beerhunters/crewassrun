@@ -61,21 +61,20 @@
         .btn-danger:hover {
             background-color: #c0392b;
         }
-        /* Стили для логотипа и текста */
         .brand-logo {
             width: 40px;
             height: 27px;
-            display: none; /* Скрыт по умолчанию */
+            display: none;
             margin-right: 10px;
         }
         .brand-text {
-            display: inline-block; /* Виден по умолчанию */
+            display: inline-block;
         }
         .sidebar-collapse .brand-text {
-            display: none; /* Скрываем текст при сворачивании */
+            display: none;
         }
         .sidebar-collapse .brand-logo {
-            display: inline-block; /* Показываем логотип при сворачивании */
+            display: inline-block;
         }
         @media (max-width: 768px) {
             .sidebar {
@@ -101,6 +100,13 @@
                 <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
             </li>
         </ul>
+        <ul class="navbar-nav ml-auto">
+            {% if current_user.is_authenticated %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Выйти</a>
+            </li>
+            {% endif %}
+        </ul>
     </nav>
 
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
@@ -109,6 +115,13 @@
             <span class="brand-text font-weight-light">Bun Bot Admin</span>
         </a>
         <div class="sidebar">
+            {% if current_user.is_authenticated %}
+            <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+                <div class="info">
+                    <p class="d-block text-white">Привет, {{ current_user.username }}!</p>
+                </div>
+            </div>
+            {% endif %}
             <nav class="mt-2">
                 <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                     <li class="nav-item">
