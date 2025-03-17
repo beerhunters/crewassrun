@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, Blueprint, render_template, request, redirect, url_for, flash
 import aiohttp
 import asyncio
 import logging
@@ -9,15 +9,18 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.secret_key = "your_secret_key_here"
-# API_URL = "http://localhost:8000"
-API_URL = "http://api:8000"  # Оставляем так, так как внутри сети Docker
+API_URL = "http://localhost:8000"
+# API_URL = "http://api:8000"  # Оставляем так, так как внутри сети Docker
+
+# Создаем Blueprint с префиксом /crewassrun
+admin_bp = Blueprint("admin", __name__, url_prefix="/crewassrun")
 
 
 async def fetch_data(endpoint):
     async with aiohttp.ClientSession() as session:
         async with session.get(f"{API_URL}/{endpoint}") as response:
             data = await response.json()
-            logger.debug(f"Данные из API /{endpoint}: {data}")
+            # logger.debug(f"Данные из API /{endpoint}: {data}")
             return data
 
 
@@ -47,18 +50,18 @@ def paginate(data, page, per_page):
     return data[start:end], total_pages
 
 
-@app.route("/")
+@admin_bp.route("/")
 def index():
     return render_template("index.html")
 
 
-@app.route("/users")
+@admin_bp.route("/users")
 def users():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
         users = loop.run_until_complete(fetch_data("users/"))
-        logger.info(f"Получено пользователей: {len(users)}")
+        # logger.info(f"Получено пользователей: {len(users)}")
     except Exception as e:
         logger.error(f"Ошибка при загрузке данных: {str(e)}")
         flash("Ошибка при загрузке данных пользователей.", "danger")
@@ -67,7 +70,7 @@ def users():
         loop.close()
 
     page = int(request.args.get("page", 1))
-    per_page = int(request.args.get("per_page", 10))  # По умолчанию 10
+    per_page = int(request.args.get("per_page", 10))
     paginated_users, total_pages = paginate(users, page, per_page)
     return render_template(
         "users.html",
@@ -78,13 +81,13 @@ def users():
     )
 
 
-@app.route("/buns")
+@admin_bp.route("/buns")
 def buns():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
         buns = loop.run_until_complete(fetch_data("buns/"))
-        logger.info(f"Получено булочек: {len(buns)}")
+        # logger.info(f"Получено булочек: {len(buns)}")
     except Exception as e:
         logger.error(f"Ошибка при загрузке данных: {str(e)}")
         flash("Ошибка при загрузке данных булочек.", "danger")
@@ -104,14 +107,14 @@ def buns():
     )
 
 
-@app.route("/results")
+@admin_bp.route("/results")
 def results():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
         users = loop.run_until_complete(fetch_data("users/"))
         user_buns = loop.run_until_complete(fetch_data("user_buns/"))
-        logger.info(f"Получено результатов: {len(user_buns)}")
+        # logger.info(f"Получено результатов: {len(user_buns)}")
         user_map = {user["id"]: user["username"] for user in users}
         for ub in user_buns:
             ub["username"] = user_map.get(
@@ -136,8 +139,7 @@ def results():
     )
 
 
-# Остальные маршруты остаются без изменений
-@app.route("/delete_user/<int:telegram_id>/<chat_id>")
+@admin_bp.route("/delete_user/<int:telegram_id>/<chat_id>")
 def delete_user(telegram_id, chat_id):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -152,10 +154,10 @@ def delete_user(telegram_id, chat_id):
         flash(f"Ошибка: {str(e)}", "danger")
     finally:
         loop.close()
-    return redirect(url_for("users"))
+    return redirect(url_for("admin.users"))
 
 
-@app.route("/add_bun", methods=["POST"])
+@admin_bp.route("/add_bun", methods=["POST"])
 def add_bun():
     name = request.form["name"]
     points = int(request.form["points"])
@@ -169,10 +171,10 @@ def add_bun():
         flash(f"Ошибка при добавлении булочки: {str(e)}", "danger")
     finally:
         loop.close()
-    return redirect(url_for("buns"))
+    return redirect(url_for("admin.buns"))
 
 
-@app.route("/edit_bun/<name>", methods=["POST"])
+@admin_bp.route("/edit_bun/<name>", methods=["POST"])
 def edit_bun(name):
     points = int(request.form["points"])
     loop = asyncio.new_event_loop()
@@ -187,10 +189,10 @@ def edit_bun(name):
         flash(f"Ошибка при обновлении: {str(e)}", "danger")
     finally:
         loop.close()
-    return redirect(url_for("buns"))
+    return redirect(url_for("admin.buns"))
 
 
-@app.route("/delete_bun/<name>")
+@admin_bp.route("/delete_bun/<name>")
 def delete_bun(name):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -205,10 +207,10 @@ def delete_bun(name):
         flash(f"Ошибка: {str(e)}", "danger")
     finally:
         loop.close()
-    return redirect(url_for("buns"))
+    return redirect(url_for("admin.buns"))
 
 
-@app.route("/edit_user_bun/<int:id>", methods=["POST"])
+@admin_bp.route("/edit_user_bun/<int:id>", methods=["POST"])
 def edit_user_bun(id):
     count = int(request.form["count"])
     loop = asyncio.new_event_loop()
@@ -240,10 +242,10 @@ def edit_user_bun(id):
         flash(f"Ошибка при обновлении: {str(e)}", "danger")
     finally:
         loop.close()
-    return redirect(url_for("results"))
+    return redirect(url_for("admin.results"))
 
 
-@app.route("/delete_user_bun/<int:id>")
+@admin_bp.route("/delete_user_bun/<int:id>")
 def delete_user_bun(id):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -258,10 +260,13 @@ def delete_user_bun(id):
         flash(f"Ошибка: {str(e)}", "danger")
     finally:
         loop.close()
-    return redirect(url_for("results"))
+    return redirect(url_for("admin.results"))
 
+
+# Регистрируем Blueprint в приложении
+app.register_blueprint(admin_bp)
 
 if __name__ == "__main__":
     logger.info("Запуск Flask приложения")
-    # app.run(debug=True, port=5000)
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(debug=True, port=5000)
+    # app.run(host="0.0.0.0", port=5000, debug=False)
