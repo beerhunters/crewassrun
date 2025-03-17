@@ -17,7 +17,7 @@ from collections import defaultdict
 
 admin_cntr = Router()
 
-ADMIN = int(ADMIN)
+# ADMIN = int(ADMIN)
 
 
 @admin_cntr.message(Command(commands="user_list"))
