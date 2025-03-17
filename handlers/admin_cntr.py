@@ -242,7 +242,7 @@ async def remove_bun_handler(message: types.Message):
         await message.reply(f"Булочка '{name}' не найдена!")
 
 
-@admin_cntr.message(Command(commands="admin_help"))
+@admin_cntr.message(Command(commands="help"))
 async def admin_help_handler(message: types.Message):
     """Вывод списка всех админских команд (только для админа в ЛС)."""
     if message.chat.type != "private" or message.from_user.id != ADMIN:
