@@ -18,8 +18,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'  # 0.5 CPU
-          memory: 256M  # 256 MiB памяти
+          cpus: '0.5'
+          memory: 256M
 
   api:
     build:
@@ -31,6 +31,8 @@ services:
       - ./logs:/app/logs
     environment:
       - PYTHONPATH=/app
+    ports:
+      - "8000:8000"  # Для прямого доступа при отладке (опционально)
     restart: unless-stopped
     deploy:
       resources:
@@ -38,7 +40,7 @@ services:
           cpus: '0.5'
           memory: 256M
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/users/" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/users/"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -52,6 +54,8 @@ services:
       - ./db.sqlite3:/app/db.sqlite3
       - ./logs:/app/logs
       - ./.env:/app/.env
+      - ./admin/templates:/app/templates  # Указываем точный путь к шаблонам
+      - ./admin/static:/app/static  # Указываем точный путь к статике
     environment:
       - PYTHONPATH=/app
       - FLASK_ENV=production
@@ -64,6 +68,11 @@ services:
         limits:
           cpus: '0.5'
           memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/crewassrun/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   nginx:
     build:
@@ -74,8 +83,9 @@ services:
       - "80:80"
       - "443:443"
     depends_on:
-#      - admin
       api:
+        condition: service_healthy
+      admin:
         condition: service_healthy
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro

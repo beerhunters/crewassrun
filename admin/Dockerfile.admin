@@ -1,20 +1,12 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 WORKDIR /app
-
-# Устанавливаем зависимости
-COPY requirements.txt .
+COPY admin/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+COPY admin/app.py .
+COPY admin/templates ./templates
+COPY admin/static ./static
 
-# Копируем только нужные файлы для админ-панели
-COPY config.py .
-COPY admin/ ./admin/
-COPY database/ ./database/
-COPY logger.py .
-COPY migrations/ ./migrations/
+RUN pip install gunicorn
 
-# Создаем директорию для логов
-RUN mkdir -p logs
-
-# Команда запуска Flask
-CMD ["python", "admin/app.py"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "app:app"]
