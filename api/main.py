@@ -1,9 +1,7 @@
 # api/main.py
-import argparse
 import logging
 from contextlib import asynccontextmanager
 
-import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
@@ -333,10 +331,3 @@ async def update_points(request: PointsUpdateRequest):
             "message": f"Очки ({request.points}) начислены {updated_count} пользователям в чате {request.chat_id}",
             "updated_count": updated_count,
         }
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=8000)
-    args = parser.parse_args()
-    uvicorn.run(app, host="0.0.0.0", port=args.port)

@@ -36,7 +36,6 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
-# app.secret_key = "your_secret_key_here"  # Замените на безопасный ключ
 app.secret_key = SECRET_KEY  # Замените на безопасный ключ
 API_URL = "http://localhost:8000"
 # API_URL = "http://api:8000"  # Оставляем так, так как внутри сети Docker
@@ -535,36 +534,7 @@ def delete_setting(key):
 # Регистрируем Blueprint
 app.register_blueprint(admin_bp)
 
-# if __name__ == "__main__":
-#     logger.info("Запуск Flask приложения")
-#     app.run(debug=True, port=5000)
-#     # app.run(debug=True, host="0.0.0.0", port=5000)  # Для развертывания в Docker
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=5000)
-    args = parser.parse_args()
-    # Запуск через Gunicorn или Flask для отладки
-    if os.getenv("FLASK_ENV") == "development":
-        app.run(debug=True, host="0.0.0.0", port=args.port)
-    else:
-        from gunicorn.app.base import BaseApplication
-
-        class StandaloneApplication(BaseApplication):
-            def __init__(self, app, options=None):
-                self.options = options or {}
-                self.application = app
-                super().__init__()
-
-            def load_config(self):
-                for key, value in self.options.items():
-                    self.cfg.set(key.lower(), value)
-
-            def load(self):
-                return self.application
-
-        options = {
-            "bind": f"0.0.0.0:{args.port}",
-            "workers": 2,
-            "timeout": 60,
-        }
-        StandaloneApplication(app, options).run()
+    logger.info("Запуск Flask приложения")
+    app.run(debug=True, port=5000)
+    # app.run(debug=True, host="0.0.0.0", port=5000)  # Для развертывания в Docker

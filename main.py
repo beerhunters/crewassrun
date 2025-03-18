@@ -1,13 +1,10 @@
 # main.py
 import asyncio
 
-# import os
-
 import aiocron
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
 
-# from dotenv import load_dotenv
 
 from config import API_TOKEN
 from handlers.admin_cntr import admin_cntr
@@ -22,8 +19,6 @@ from handlers.start import start_r
 # from logger import logger, LoggingMiddleware
 from database.queries import get_active_chat_ids
 from logger import logger
-
-# docker exec -it nginx certbot certonly --webroot -w /var/www/html -d 85.193.91.223 --email dreadban@gmail.com --agree-tos --no-eff-email
 
 
 async def send_daily_messages(bot: Bot):
@@ -46,8 +41,6 @@ async def send_daily_messages(bot: Bot):
 
 async def main():
     """Главная функция для запуска бота."""
-    # load_dotenv()
-    # bot = Bot(token=os.getenv("API_TOKEN"))
     bot = Bot(token=API_TOKEN)
     dp = Dispatcher()
     dp.include_routers(
@@ -76,10 +69,6 @@ async def main():
                 "0 9 * * *",
                 func=lambda: asyncio.create_task(send_daily_messages(bot)),
             )
-            # cron_task = aiocron.crontab(
-            #     "* * * * *",
-            #     func=lambda: asyncio.create_task(send_daily_messages(bot)),
-            # )
             cron_task.start()
             logger.info("Задача отправки утренних сообщений запущена...")
         except Exception as e:
