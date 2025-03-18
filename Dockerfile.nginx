@@ -8,5 +8,5 @@ RUN mkdir -p /etc/nginx/certs && \
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout /etc/nginx/certs/server.key \
     -out /etc/nginx/certs/server.crt \
-    -subj "/C=RU/ST=State/L=City/O=Organization/OU=Unit/CN=37.252.22.232" && \
+    -subj "/C=RU/ST=State/L=City/O=Organization/OU=Unit/CN=85.193.91.223" && \
     chmod 600 /etc/nginx/certs/server.key /etc/nginx/certs/server.crt
