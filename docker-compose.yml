@@ -18,8 +18,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 256M
+          cpus: '1.0'
+          memory: 512M
 
   api:
     build:
@@ -31,14 +31,12 @@ services:
       - ./logs:/app/logs
     environment:
       - PYTHONPATH=/app
-    ports:
-      - "8000:8000"  # Для прямого доступа при отладке (опционально)
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 256M
+          cpus: '1.0'
+          memory: 512M
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/users/"]
       interval: 10s
@@ -54,8 +52,8 @@ services:
       - ./db.sqlite3:/app/db.sqlite3
       - ./logs:/app/logs
       - ./.env:/app/.env
-      - ./admin/templates:/app/templates  # Указываем точный путь к шаблонам
-      - ./admin/static:/app/static  # Указываем точный путь к статике
+      - ./admin/templates:/app/templates
+      - ./admin/static:/app/static
     environment:
       - PYTHONPATH=/app
       - FLASK_ENV=production
@@ -66,8 +64,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 256M
+          cpus: '1.0'
+          memory: 512M
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/crewassrun/"]
       interval: 10s
@@ -94,8 +92,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 256M
+          cpus: '1.0'
+          memory: 512M
 
 volumes:
   db_data:
