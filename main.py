@@ -23,7 +23,7 @@ from handlers.start import start_r
 from database.queries import get_active_chat_ids
 from logger import logger
 
-# docker exec -it nginx certbot certonly --webroot -w /var/www/html -d 37.252.22.232 --email dreadban@gmail.com --agree-tos --no-eff-email
+# docker exec -it nginx certbot certonly --webroot -w /var/www/html -d 85.193.91.223 --email dreadban@gmail.com --agree-tos --no-eff-email
 
 
 async def send_daily_messages(bot: Bot):

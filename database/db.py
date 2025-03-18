@@ -3,11 +3,10 @@ import functools
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
 
-engine = create_async_engine(
-    url="sqlite+aiosqlite:////app/db.sqlite3", echo=True
-)  # Для Docker
-# engine = create_async_engine(url="sqlite+aiosqlite:///db.sqlite3", echo=True)
-# engine = create_async_engine(url="sqlite+aiosqlite:///crewassrundb.sqlite3", echo=True)
+# engine = create_async_engine(
+#     url="sqlite+aiosqlite:////app/db.sqlite3", echo=True
+# )  # Для Docker
+engine = create_async_engine(url="sqlite+aiosqlite:///db.sqlite3", echo=True)
 
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
