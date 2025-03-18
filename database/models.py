@@ -1,4 +1,12 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, UniqueConstraint
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Boolean,
+    ForeignKey,
+    UniqueConstraint,
+    Text,
+)
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -44,3 +52,12 @@ class Bun(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False, unique=True)  # Название булочки, уникальное
     points = Column(Integer, nullable=False)  # Баллы за булочку
+
+
+class GameSetting(Base):
+    __tablename__ = "game_settings"
+
+    id = Column(Integer, primary_key=True)  # AUTOINCREMENT автоматически в SQLite
+    key = Column(String(50), unique=True, nullable=False)  # Ограничение длины работает
+    value = Column(Integer, nullable=False)
+    description = Column(Text)

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Начисление очков{% endblock %}
+{% block header %}<i class="bi bi-star-fill me-2"></i> Начисление очков{% endblock %}
+{% block content %}
+<div class="mt-5">
+    <!-- Форма начисления очков -->
+    <div class="card shadow-sm p-4 mb-5" style="background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 15px;">
+        <form method="POST" action="{{ url_for('admin.points') }}">
+            <div class="row g-3 align-items-center">
+                <!-- Выбор чата -->
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-primary text-white"><i class="bi bi-chat-dots"></i></span>
+                        <select name="chat_id" class="form-control" onchange="updateUsers(this.value)" required>
+                            <option value="">Выберите чат</option>
+                            {% for chat_id in chat_users.keys() %}
+                            <option value="{{ chat_id }}">{{ chat_id }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Выбор пользователей -->
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text bg-info text-white"><i class="bi bi-people"></i></span>
+                        <select multiple name="telegram_ids" id="telegram_ids" class="form-control" style="height: 150px;">
+                            <!-- Опции заполняются JavaScript -->
+                        </select>
+                    </div>
+                    <small class="form-text text-muted">Оставьте пустым для всех активных пользователей чата.</small>
+                </div>
+
+                <!-- Количество очков -->
+                <div class="col-md-2">
+                    <div class="input-group">
+                        <span class="input-group-text bg-warning text-white"><i class="bi bi-star"></i></span>
+                        <input type="number" name="points" class="form-control" placeholder="Очки" required>
+                    </div>
+                </div>
+
+                <!-- Кнопка -->
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-success w-100 shadow-sm hover-effect">
+                        <i class="bi bi-check-circle me-1"></i> Начислить
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Список чатов и пользователей для JavaScript -->
+    <script>
+        const chatUsers = {{ chat_users | tojson }};
+
+        function updateUsers(chatId) {
+            const select = document.getElementById('telegram_ids');
+            select.innerHTML = ''; // Очищаем текущие опции
+            if (chatId && chatUsers[chatId]) {
+                chatUsers[chatId].forEach(user => {
+                    if (user.in_game) { // Показываем только активных пользователей
+                        const option = document.createElement('option');
+                        option.value = user.telegram_id;
+                        option.text = `@${user.username || 'NoUsername'} (${user.full_name})`;
+                        select.appendChild(option);
+                    }
+                });
+            }
+        }
+    </script>
+</div>
+
+<style>
+    .hover-effect {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .hover-effect:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+    }
+    .form-control:focus {
+        border-color: #ff6f61;
+        box-shadow: 0 0 0 0.2rem rgba(255, 111, 97, 0.25);
+    }
+</style>
+{% endblock %}

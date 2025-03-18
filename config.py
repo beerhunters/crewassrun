@@ -10,6 +10,7 @@ try:
     CHAT_ID = os.getenv("CHAT_ID")
     ADMIN = os.getenv("ADMIN")
     FOR_LOGS = os.getenv("FOR_LOGS")
+    SECRET_KEY = os.getenv("SECRET_KEY")
     # API_URL = os.getenv("API_URL")
     # DATABASE_URL = os.getenv("DATABASE_URL")
 except (TypeError, ValueError) as ex:

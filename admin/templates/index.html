@@ -1,10 +1,26 @@
 {% extends "base.html" %}
 {% block title %}Главная{% endblock %}
-{% block header %}Панель управления Bun Bot{% endblock %}
+{% block header %}<i class="bi bi-house-fill me-2"></i> Панель управления Bun Bot{% endblock %}
 {% block content %}
-<div class="card mt-4">
-    <div class="card-body">
-        <p>Добро пожаловать в панель управления Bun Bot! Выберите раздел в боковом меню для работы с пользователями, булочками или результатами.</p>
+<div class="mt-5">
+    <div class="card shadow-sm p-4" style="background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 15px;">
+        <div class="card-body text-center">
+            <h4 class="mb-3" style="color: #2c3e50;">Добро пожаловать в Bun Bot Admin!</h4>
+            <p class="text-muted">Выберите раздел в боковом меню для управления пользователями, булочками, результатами или настройками.</p>
+            <a href="{{ url_for('admin.settings') }}" class="btn btn-primary shadow-sm hover-effect mt-3">
+                <i class="bi bi-gear me-1"></i> Начать с настроек
+            </a>
+        </div>
     </div>
 </div>
+
+<style>
+    .hover-effect {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .hover-effect:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+    }
+</style>
 {% endblock %}

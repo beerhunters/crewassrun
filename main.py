@@ -11,10 +11,12 @@ from aiogram.types import BotCommand
 
 from config import API_TOKEN
 from handlers.admin_cntr import admin_cntr
+from handlers.admin_points import admin_points_r
 from handlers.exceptions import error_router
 from handlers.in_game import in_game_r
 from handlers.new_member import new_member_r
 from handlers.random_user import send_random_message
+from handlers.sausage_game import sausage_game_r
 from handlers.start import start_r
 
 # from logger import logger, LoggingMiddleware
@@ -48,13 +50,23 @@ async def main():
     # bot = Bot(token=os.getenv("API_TOKEN"))
     bot = Bot(token=API_TOKEN)
     dp = Dispatcher()
-    dp.include_routers(start_r, new_member_r, in_game_r, admin_cntr, error_router)
+    dp.include_routers(
+        start_r,
+        new_member_r,
+        in_game_r,
+        sausage_game_r,
+        admin_cntr,
+        admin_points_r,
+        error_router,
+    )
     # dp.update.middleware(dp.update.middleware(LoggingMiddleware()))
     bot_commands = [
         BotCommand(command="/start", description="Запустить бота"),
         BotCommand(command="/play", description="Играть"),
         BotCommand(command="/stats", description="Статистика"),
         BotCommand(command="/stats_me", description="Моя статистика"),
+        BotCommand(command="/sausage", description="Атаковать сосиской"),
+        BotCommand(command="/random_sausage", description="Случайная сосиска"),
     ]
     await bot.set_my_commands(bot_commands)
     try:

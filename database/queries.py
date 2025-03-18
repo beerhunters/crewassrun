@@ -2,7 +2,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.db import with_session
-from database.models import User, UserBun, Bun
+from database.models import User, UserBun, Bun, GameSetting
 import random
 
 from logger import logger
@@ -308,27 +308,118 @@ async def remove_bun(session: AsyncSession, name: str):
     return False
 
 
-# @with_session
-# async def update_bun_points(
-#     session: AsyncSession, bun_name: str, new_points_per_bun: int
-# ):
-#     """Обновление баллов для всех записей с указанной булочкой в user_buns."""
-#     # Получаем все записи с указанной булочкой
-#     result = await session.execute(select(UserBun).where(UserBun.bun == bun_name))
-#     user_buns = result.scalars().all()
-#
-#     if not user_buns:
-#         logger.info(f"Записей с булочкой '{bun_name}' не найдено в user_buns")
-#         return 0
-#
-#     # Обновляем баллы для каждой записи
-#     updated_count = 0
-#     for user_bun in user_buns:
-#         user_bun.points = user_bun.count * new_points_per_bun
-#         updated_count += 1
-#
-#     await session.commit()
-#     logger.info(
-#         f"Обновлено {updated_count} записей для булочки '{bun_name}' с новыми баллами: {new_points_per_bun} за штуку"
-#     )
-#     return updated_count
+@with_session
+async def get_user_points(session: AsyncSession, telegram_id: int, chat_id: int) -> int:
+    """Получает сумму баллов пользователя из user_buns."""
+    query = (
+        select(func.sum(UserBun.points).label("total_points"))
+        .join(User, User.id == UserBun.user_id)
+        .where(User.telegram_id == telegram_id, UserBun.chat_id == chat_id)
+    )
+    result = await session.execute(query)
+    total_points = result.scalar() or 0
+    return total_points
+
+
+@with_session
+async def update_user_points(
+    session: AsyncSession, telegram_id: int, chat_id: int, new_points: int
+):
+    """Обновляет баллы пользователя в user_buns, распределяя новые очки по булочкам с 0 или равномерно."""
+    # Получаем пользователя
+    user = await get_user_by_id(telegram_id, chat_id)
+    if not user:
+        logger.warning(
+            f"Пользователь telegram_id={telegram_id} не найден в чате {chat_id}"
+        )
+        return
+
+    # Получаем все записи user_buns для пользователя
+    result = await session.execute(
+        select(UserBun).where(UserBun.user_id == user.id, UserBun.chat_id == chat_id)
+    )
+    user_buns = result.scalars().all()
+
+    if not user_buns:
+        logger.warning(
+            f"Нет записей user_buns для telegram_id={telegram_id}, chat_id={chat_id}"
+        )
+        return
+
+    # Если новые очки отрицательные, приводим итог к 0
+    total_points = sum(bun.points for bun in user_buns)
+    new_total = max(0, total_points + new_points)
+
+    if new_total == 0:
+        for bun in user_buns:
+            bun.points = 0
+    else:
+        # Считаем булочки с 0 очков
+        zero_buns = [bun for bun in user_buns if bun.points == 0]
+        non_zero_buns = [bun for bun in user_buns if bun.points > 0]
+
+        if zero_buns and new_points > 0:
+            # Распределяем новые очки только по булочкам с 0
+            points_per_zero = new_points // len(zero_buns)
+            extra_points = new_points % len(zero_buns)
+            for i, bun in enumerate(zero_buns):
+                bun.points = points_per_zero + (1 if i < extra_points else 0)
+        elif new_points > 0:
+            # Если нет булочек с 0, распределяем по всем равномерно
+            points_per_bun = new_points // len(user_buns)
+            extra_points = new_points % len(user_buns)
+            for i, bun in enumerate(user_buns):
+                bun.points += points_per_bun + (1 if i < extra_points else 0)
+        elif new_points < 0:
+            # При уменьшении очков распределяем убыток пропорционально
+            remaining_loss = abs(new_points)
+            for bun in sorted(user_buns, key=lambda x: x.points, reverse=True):
+                if remaining_loss <= 0:
+                    break
+                loss = min(bun.points, remaining_loss)
+                bun.points -= loss
+                remaining_loss -= loss
+
+    await session.commit()
+    logger.debug(
+        f"Обновлены баллы для telegram_id={telegram_id}, chat_id={chat_id}: {new_points} добавлено, итого {new_total}"
+    )
+
+
+@with_session
+async def get_user_by_username(session: AsyncSession, chat_id: int, username: str):
+    """Получение пользователя по username и chat_id."""
+    result = await session.execute(
+        select(User).where(User.username == username, User.chat_id == chat_id)
+    )
+    return result.scalars().first()
+
+
+@with_session
+async def get_game_setting(session: AsyncSession, key: str) -> int:
+    result = await session.execute(select(GameSetting).where(GameSetting.key == key))
+    setting = result.scalar_one_or_none()
+    if setting:
+        return setting.value
+    logger.warning(f"Настройка с ключом '{key}' не найдена")
+    return 0
+
+
+@with_session
+async def get_all_game_settings(session: AsyncSession) -> dict[str, int]:
+    result = await session.execute(select(GameSetting))
+    settings = result.scalars().all()
+    return {setting.key: setting.value for setting in settings}
+
+
+@with_session
+async def update_game_setting(session: AsyncSession, key: str, value: int) -> bool:
+    result = await session.execute(select(GameSetting).where(GameSetting.key == key))
+    setting = result.scalar_one_or_none()
+    if setting:
+        setting.value = value
+        await session.commit()
+        logger.info(f"Настройка '{key}' обновлена: {value}")
+        return True
+    logger.warning(f"Настройка с ключом '{key}' не найдена для обновления")
+    return False
