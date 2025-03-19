@@ -55,7 +55,7 @@ class User(UserMixin):
 
 
 admin = os.getenv("ADMIN_FOR_ADMIN")
-password = os.getenv("PASSWORD_FRO_ADMIN")
+password = os.getenv("PASSWORD_FOR_ADMIN")
 # Фиктивный пользователь (замените на свои данные)
 admin_users = {
     "admin": User(

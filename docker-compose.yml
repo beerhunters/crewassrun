@@ -45,6 +45,8 @@ services:
     environment:
       - API_TOKEN=${API_TOKEN}
       - DATABASE_URL=${DATABASE_URL}
+      - ADMIN_FOR_ADMIN=${ADMIN_FOR_ADMIN}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
     volumes:
       - ./logs:/app/logs
       - ./database:/app/database
