@@ -1,4 +1,3 @@
-import argparse
 import os
 
 from flask import (
@@ -9,7 +8,6 @@ from flask import (
     redirect,
     url_for,
     flash,
-    session,
 )
 from flask_login import (
     LoginManager,
@@ -24,21 +22,21 @@ import aiohttp
 import asyncio
 import logging
 from math import ceil
+from dotenv import load_dotenv
 
-import sys
-from pathlib import Path
-
-# Добавляем корень проекта в sys.path
-sys.path.append(str(Path(__file__).parent.parent))
-from config import SECRET_KEY
+load_dotenv()
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
-app.secret_key = SECRET_KEY  # Замените на безопасный ключ
-API_URL = "http://localhost:8000"
-# API_URL = "http://api:8000"  # Оставляем так, так как внутри сети Docker
+app.secret_key = os.getenv("SECRET_KEY")  # Замените на безопасный ключ
+
+# Определяем, в Docker ли мы
+DOCKER_ENV = os.getenv("DOCKER_ENV", "False") == "True"
+
+# Устанавливаем API_URL
+API_URL = "http://api:8000" if DOCKER_ENV else "http://localhost:8000"
 
 # Инициализация Flask-Login и Bcrypt
 login_manager = LoginManager()
@@ -536,5 +534,8 @@ app.register_blueprint(admin_bp)
 
 if __name__ == "__main__":
     logger.info("Запуск Flask приложения")
-    app.run(debug=True, port=5000)
-    # app.run(debug=True, host="0.0.0.0", port=5000)  # Для развертывания в Docker
+    # Запуск приложения
+    if DOCKER_ENV:
+        app.run(debug=True, host="0.0.0.0", port=5000)
+    else:
+        app.run(debug=True, port=5000)

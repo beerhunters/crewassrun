@@ -16,7 +16,6 @@ from handlers.random_user import send_random_message
 from handlers.sausage_game import sausage_game_r
 from handlers.start import start_r
 
-# from logger import logger, LoggingMiddleware
 from database.queries import get_active_chat_ids
 from logger import logger
 
@@ -52,7 +51,6 @@ async def main():
         admin_points_r,
         error_router,
     )
-    # dp.update.middleware(dp.update.middleware(LoggingMiddleware()))
     bot_commands = [
         BotCommand(command="/start", description="Запустить бота"),
         BotCommand(command="/play", description="Играть"),

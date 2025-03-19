@@ -1,13 +1,23 @@
 import functools
+import os
 
+from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
+load_dotenv()
+DOCKER_ENV = os.getenv("DOCKER_ENV", "False") == "True"
 
+DATABASE_URL = (
+    "sqlite+aiosqlite:////app/db.sqlite3"
+    if DOCKER_ENV
+    else "sqlite+aiosqlite:///db.sqlite3"
+)
 # engine = create_async_engine(
 #     url="sqlite+aiosqlite:////app/db.sqlite3", echo=True
 # )  # Для Docker
-engine = create_async_engine(url="sqlite+aiosqlite:///db.sqlite3", echo=True)
+# engine = create_async_engine(url="sqlite+aiosqlite:///db.sqlite3", echo=True)
 
+engine = create_async_engine(url=DATABASE_URL, echo=True)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
