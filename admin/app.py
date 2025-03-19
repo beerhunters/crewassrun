@@ -31,12 +31,10 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.secret_key = os.getenv("SECRET_KEY")  # Замените на безопасный ключ
-
 # Определяем, в Docker ли мы
 DOCKER_ENV = os.getenv("DOCKER_ENV", "False") == "True"
-
 # Устанавливаем API_URL
-API_URL = "http://api:8000" if DOCKER_ENV else "http://localhost:8000"
+API_URL = os.getenv("API_URL") if DOCKER_ENV else os.getenv("API_URL_LOCAL")
 
 # Инициализация Flask-Login и Bcrypt
 login_manager = LoginManager()
@@ -56,12 +54,14 @@ class User(UserMixin):
         return bcrypt.check_password_hash(self.password_hash, password)
 
 
+admin = os.getenv("ADMIN_FOR_ADMIN")
+password = os.getenv("PASSWORD_FRO_ADMIN")
 # Фиктивный пользователь (замените на свои данные)
 admin_users = {
     "admin": User(
         id=1,
-        username="admin",
-        password_hash=bcrypt.generate_password_hash("admin123").decode("utf-8"),
+        username=admin,
+        password_hash=bcrypt.generate_password_hash(password).decode("utf-8"),
     )
 }
 

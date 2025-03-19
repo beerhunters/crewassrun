@@ -7,10 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 load_dotenv()
 DOCKER_ENV = os.getenv("DOCKER_ENV", "False") == "True"
 
+# DATABASE_URL = (
+#     "sqlite+aiosqlite:////app/db.sqlite3"
+#     if DOCKER_ENV
+#     else "sqlite+aiosqlite:///db.sqlite3"
+# )
 DATABASE_URL = (
-    "sqlite+aiosqlite:////app/db.sqlite3"
-    if DOCKER_ENV
-    else "sqlite+aiosqlite:///db.sqlite3"
+    os.getenv("DATABASE_URL") if DOCKER_ENV else os.getenv("DATABASE_URL_LOCAL")
 )
 # engine = create_async_engine(
 #     url="sqlite+aiosqlite:////app/db.sqlite3", echo=True
