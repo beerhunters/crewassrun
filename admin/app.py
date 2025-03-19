@@ -73,8 +73,10 @@ def load_user(user_id):
     return admin_users.get("admin") if user_id == "1" else None
 
 
-# Blueprint для админки
-admin_bp = Blueprint("admin", __name__, url_prefix="/crewassrun")
+# # Blueprint для админки
+# admin_bp = Blueprint("admin", __name__, url_prefix="/crewassrun")
+# Blueprint без префикса
+admin_bp = Blueprint("admin", __name__)  # Убрали url_prefix="/crewassrun"
 
 
 async def fetch_data(endpoint):
@@ -531,8 +533,9 @@ def delete_setting(key):
     return redirect(url_for("admin.settings"))
 
 
-# Регистрируем Blueprint
-app.register_blueprint(admin_bp)
+# # Регистрируем Blueprint
+# app.register_blueprint(admin_bp)
+app.register_blueprint(admin_bp, url_prefix="/crewassrun")  # Префикс задаем здесь
 
 if __name__ == "__main__":
     logger.info("Запуск Flask приложения")
