@@ -13,7 +13,8 @@ services:
       - DATABASE_URL=${DATABASE_URL}
     volumes:
       - ./logs:/app/logs
-      - ./database:/app/database
+      - ./db.sqlite3:/app/db.sqlite3
+#      - ./database:/app/database
     deploy:
       resources:
         limits:
@@ -29,7 +30,8 @@ services:
       - DATABASE_URL=${DATABASE_URL}
     volumes:
       - ./logs:/app/logs
-      - ./database:/app/database
+      - ./db.sqlite3:/app/db.sqlite3
+#      - ./database:/app/database
     ports:
       - "8000:8000"
     deploy:
@@ -48,7 +50,8 @@ services:
       - PASSWORD_FOR_ADMIN=${PASSWORD_FOR_ADMIN}
     volumes:
       - ./logs:/app/logs
-      - ./database:/app/database
+      - ./db.sqlite3:/app/db.sqlite3
+#      - ./database:/app/database
     ports:
       - "5000:5000"
     deploy:
@@ -79,4 +82,4 @@ services:
 
 volumes:
   logs:
-  database:
+#  database:
