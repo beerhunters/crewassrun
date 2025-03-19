@@ -1,8 +1,7 @@
 import random
-from aiogram import types, Router
+from aiogram import types, Router, Bot
 from aiogram.filters import Command, ChatMemberUpdatedFilter, LEFT
 
-from buns_data import IN_GAME_TEXT
 from database.queries import (
     get_user_by_id,
     add_user_to_game,
@@ -11,6 +10,21 @@ from database.queries import (
     get_top_users_by_points,
     set_user_out_of_game,
 )
+from handlers.start import check_bot_admin
+from logger import logger
+
+IN_GAME_TEXT = [
+    "Ты присоединился, @{user}! 🥳 Может, именно ты станешь булочкой дня! 🍩",
+    "Отлично, @{user}, ты в игре! 🎉 Кто знает, может, ты — будущая булочка дня? 🥐",
+    "Все готово, @{user}! 🔥 Время быть булочкой дня! 🍞 Ждем с нетерпением!",
+    "Ты присоединился, @{user}, и кто знает... Может, ты — булочка дня? 🥯✨",
+    "Ого, @{user}, ты в игре! 🏆 Кто станет булочкой дня — сюрприз! 🍪",
+    "Ты с нами, @{user}! 🎮 Кто знает, может, ты станешь булочкой дня? 🍰",
+    "Зарегистрирован, @{user}! 🥳 Может, именно твоя булочка окажется в центре внимания! 🥞",
+    "Ты в игре, @{user}! 🥳 Кто знает, когда твоя булочка дня окажется на пьедестале? 🥖",
+    "Добро пожаловать в игру, @{user}! 🎉 Возможно, ты — булочка дня, и мы это еще узнаем! 🥨",
+    "Ты в игре, @{user}! 🚀 Время быть булочкой дня, независимо от того, когда это случится! 🥯",
+]
 
 in_game_r = Router()
 
@@ -121,14 +135,19 @@ async def statistic_handler(message: types.Message):
 
 
 @in_game_r.chat_member(ChatMemberUpdatedFilter(member_status_changed=LEFT))
-async def on_user_left_chat(update: types.ChatMemberUpdated):
+async def on_user_left_chat(update: types.ChatMemberUpdated, bot: Bot):
     """Обработка события выхода пользователя из чата."""
     user_id = update.from_user.id
     chat_id = update.chat.id
     if update.chat.type == "private":
-        return  # Игнорируем приватные чаты
+        return
 
-    # Устанавливаем статус in_game=False
+    if not await check_bot_admin(bot, chat_id):
+        logger.warning(
+            f"Бот не имеет прав администратора в чате {chat_id}, игнорируем событие"
+        )
+        return
+
     changed = await set_user_out_of_game(telegram_id=user_id, chat_id=chat_id)
     if changed:
         display_name = (
@@ -136,7 +155,7 @@ async def on_user_left_chat(update: types.ChatMemberUpdated):
             if update.from_user.username
             else update.from_user.full_name
         )
-        await update.bot.send_message(
+        await bot.send_message(
             chat_id,
             f"{display_name} покинул чат и больше не участвует в розыгрыше булочек!",
             parse_mode="HTML",
