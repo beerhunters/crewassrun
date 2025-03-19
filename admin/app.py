@@ -54,8 +54,10 @@ class User(UserMixin):
         return bcrypt.check_password_hash(self.password_hash, password)
 
 
-admin_admin = os.getenv("ADMIN_FOR_ADMIN")
-admin_password = os.getenv("PASSWORD_FOR_ADMIN")
+# admin_admin = os.getenv("ADMIN_FOR_ADMIN")
+# admin_password = os.getenv("PASSWORD_FOR_ADMIN")
+admin_admin = "admin"
+admin_password = "admin123"
 # Фиктивный пользователь (замените на свои данные)
 admin_users = {
     "admin": User(
