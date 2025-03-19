@@ -54,10 +54,10 @@ class User(UserMixin):
         return bcrypt.check_password_hash(self.password_hash, password)
 
 
-# admin_admin = os.getenv("ADMIN_FOR_ADMIN")
-# admin_password = os.getenv("PASSWORD_FOR_ADMIN")
-admin_admin = "admin"
-admin_password = "admin123"
+admin_admin = os.getenv("ADMIN_FOR_ADMIN")
+admin_password = os.getenv("PASSWORD_FOR_ADMIN")
+# admin_admin = "admin"
+# admin_password = "admin123"
 # Фиктивный пользователь (замените на свои данные)
 admin_users = {
     "admin": User(
@@ -73,9 +73,6 @@ def load_user(user_id):
     return admin_users.get("admin") if user_id == "1" else None
 
 
-# # Blueprint для админки
-# admin_bp = Blueprint("admin", __name__, url_prefix="/crewassrun")
-# Blueprint без префикса
 admin_bp = Blueprint("admin", __name__)  # Убрали url_prefix="/crewassrun"
 
 
@@ -533,8 +530,7 @@ def delete_setting(key):
     return redirect(url_for("admin.settings"))
 
 
-# # Регистрируем Blueprint
-# app.register_blueprint(admin_bp)
+# Регистрируем Blueprint
 app.register_blueprint(admin_bp, url_prefix="/crewassrun")  # Префикс задаем здесь
 
 if __name__ == "__main__":
@@ -544,40 +540,3 @@ if __name__ == "__main__":
         app.run(debug=True, host="0.0.0.0", port=5000)
     else:
         app.run(debug=True, port=5000)
-# # admin/app.py (тестовый вариант)
-# from flask import Flask, Blueprint, render_template
-# from flask_login import LoginManager, login_required
-#
-# app = Flask(__name__, template_folder="templates", static_folder="static")
-# app.secret_key = "test_secret_key"  # Для теста
-#
-# login_manager = LoginManager()
-# login_manager.init_app(app)
-# login_manager.login_view = "login"
-#
-# admin_bp = Blueprint("admin", __name__)
-#
-#
-# @admin_bp.route("/")
-# @login_required
-# def index():
-#     return "Admin Index Page"
-#
-#
-# @admin_bp.route("/users")
-# @login_required
-# def users():
-#     return "Users Page"
-#
-#
-# @app.route("/login")
-# def login():
-#     return "Login Page (not implemented yet)"
-#
-#
-# print("Registering admin blueprint with prefix /crewassrun")
-# app.register_blueprint(admin_bp, url_prefix="/crewassrun")
-# print("Registered routes:", app.url_map)
-#
-# if __name__ == "__main__":
-#     app.run(host="0.0.0.0", port=5000)
