@@ -1,23 +1,24 @@
 # Dockerfile.nginx
 FROM nginx:latest
 
-# Устанавливаем OpenSSL (он может быть не предустановлен в минимальном образе Nginx)
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
-# Создаем директорию для сертификатов внутри контейнера
 RUN mkdir -p /etc/nginx/certs
 
-# Генерируем самоподписные сертификаты
-ARG DOMAIN_OR_IP=localhost
-RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+COPY .env ./
+# Аргумент сборки для IP или домена
+ARG DOMAIN_OR_IP
+RUN if [ -z "$DOMAIN_OR_IP" ]; then echo "DOMAIN_OR_IP не задан!" && exit 1; fi && \
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout /etc/nginx/certs/selfsigned.key \
     -out /etc/nginx/certs/selfsigned.crt \
     -subj "/C=RU/ST=State/L=City/O=Organization/CN=${DOMAIN_OR_IP}"
 
-# Копируем конфигурацию Nginx
+# Удаляем стандартную конфигурацию
+RUN rm -f /etc/nginx/conf.d/default.conf
+
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Указываем, что сертификаты уже внутри контейнера, том не обязателен
 VOLUME /etc/nginx/certs
 
 EXPOSE 80 443
