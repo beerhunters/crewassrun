@@ -71,7 +71,7 @@ async def new_member_handler(event: ChatMemberUpdated, bot: Bot):
             username=new_member.username,
             full_name=new_member.full_name,
             chat_id=chat_id,
-            in_game=True,
+            # in_game=True,
         )
         send_sticker = True
         logger.info(
