@@ -14,12 +14,12 @@ services:
     volumes:
       - ./logs:/app/logs
       - ./db.sqlite3:/app/db.sqlite3
-#      - ./database:/app/database
     deploy:
       resources:
         limits:
           cpus: '0.5'
           memory: 256M
+    restart: unless-stopped  # Добавили политику перезапуска
 
   api:
     build:
@@ -31,7 +31,6 @@ services:
     volumes:
       - ./logs:/app/logs
       - ./db.sqlite3:/app/db.sqlite3
-#      - ./database:/app/database
     ports:
       - "8000:8000"
     deploy:
@@ -39,6 +38,7 @@ services:
         limits:
           cpus: '0.5'
           memory: 256M
+    restart: unless-stopped  # Добавили политику перезапуска
 
   admin:
     build:
@@ -51,7 +51,6 @@ services:
     volumes:
       - ./logs:/app/logs
       - ./db.sqlite3:/app/db.sqlite3
-#      - ./database:/app/database
     ports:
       - "5000:5000"
     deploy:
@@ -59,6 +58,7 @@ services:
         limits:
           cpus: '0.5'
           memory: 256M
+    restart: unless-stopped  # Добавили политику перезапуска
 
   nginx:
     build:
@@ -79,7 +79,7 @@ services:
         limits:
           cpus: '0.25'
           memory: 128M
+    restart: unless-stopped  # Добавили политику перезапуска
 
 volumes:
   logs:
-#  database:
