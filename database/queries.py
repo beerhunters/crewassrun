@@ -501,7 +501,7 @@ async def add_or_update_user_bun(
 @with_session
 async def get_user_buns_stats(session: AsyncSession, telegram_id: int, chat_id: int):
     """Получение статистики булочек пользователя: булочка - количество - очки."""
-    user = await get_user_by_id(session, telegram_id, chat_id)
+    user = await get_user_by_id(telegram_id, chat_id)
     if not user:
         return []
     query = select(UserBun.bun, UserBun.count, UserBun.points).where(
