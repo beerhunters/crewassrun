@@ -61,3 +61,19 @@ class GameSetting(Base):
     key = Column(String(50), unique=True, nullable=False)  # Ограничение длины работает
     value = Column(Integer, nullable=False)
     description = Column(Text)
+
+
+# class Event(Base):
+#     __tablename__ = "events"
+#
+#     id = Column(Integer, primary_key=True, index=True)
+#     image_path = Column(String, nullable=True)  # Путь к загруженной картинке
+#     text = Column(String, nullable=False)  # Текст события
+#     event_date = Column(DateTime, nullable=False)  # Дата события
+#     is_delayed = Column(Boolean, default=False)  # Отложенная публикация
+#     publish_date = Column(DateTime, nullable=True)  # Дата/время публикации
+#     chat_id = Column(Integer, nullable=False)  # ID чата/канала для публикации
+#     created_at = Column(DateTime, default=datetime.datetime.utcnow)  # Дата создания
+#
+#     def __repr__(self):
+#         return f"<Event(id={self.id}, text='{self.text}', chat_id={self.chat_id})>"
