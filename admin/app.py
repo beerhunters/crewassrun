@@ -531,10 +531,46 @@ def delete_setting(key):
 # Регистрируем Blueprint
 app.register_blueprint(admin_bp, url_prefix="/crewassrun")  # Префикс задаем здесь
 
+# if __name__ == "__main__":
+#     logger.info("Запуск Flask приложения")
+#     # Запуск приложения
+#     if DOCKER_ENV:
+#         app.run(debug=True, host="0.0.0.0", port=5000)
+#     else:
+#         app.run(debug=True, port=5000)
 if __name__ == "__main__":
-    logger.info("Запуск Flask приложения")
-    # Запуск приложения
+    debug_mode = True
+    host = "0.0.0.0" if DOCKER_ENV else "127.0.0.1"
+    port = 5000
+
+    env_str = "Docker" if DOCKER_ENV else "локальной среде"
+    logger.info(
+        f"Запуск Flask приложения в {env_str}: "
+        f"debug={debug_mode}, host={host}, port={port}"
+    )
+
+    # В Docker используем Gunicorn, локально — Flask
     if DOCKER_ENV:
-        app.run(debug=True, host="0.0.0.0", port=5000)
+        from gunicorn.app.base import BaseApplication
+
+        class StandaloneApplication(BaseApplication):
+            def __init__(self, app, options=None):
+                self.options = options or {}
+                self.application = app
+                super().__init__()
+
+            def load_config(self):
+                for key, value in self.options.items():
+                    self.cfg.set(key, value)
+
+            def load(self):
+                return self.application
+
+        options = {
+            "bind": f"{host}:{port}",
+            "workers": 4,  # Количество потоков
+            "timeout": 60,
+        }
+        StandaloneApplication(app, options).run()
     else:
-        app.run(debug=True, port=5000)
+        app.run(debug=debug_mode, port=port)
