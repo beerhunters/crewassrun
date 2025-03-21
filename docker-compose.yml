@@ -48,6 +48,7 @@ services:
       - API_TOKEN=${API_TOKEN}
       - DATABASE_URL=${DATABASE_URL}
       - PASSWORD_FOR_ADMIN=${PASSWORD_FOR_ADMIN}
+      - DOCKER_ENV=1
     volumes:
       - ./logs:/app/logs
       - ./db.sqlite3:/app/db.sqlite3
