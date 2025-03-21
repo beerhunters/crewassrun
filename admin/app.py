@@ -32,7 +32,8 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.secret_key = os.getenv("SECRET_KEY")  # Замените на безопасный ключ
 # Определяем, в Docker ли мы
-DOCKER_ENV = os.getenv("DOCKER_ENV", "False") == "True"
+# DOCKER_ENV = os.getenv("DOCKER_ENV", "False") == "True"
+DOCKER_ENV = os.getenv("DOCKER_ENV", False)
 # Устанавливаем API_URL
 API_URL = os.getenv("API_URL") if DOCKER_ENV else os.getenv("API_URL_LOCAL")
 
@@ -540,10 +541,10 @@ app.register_blueprint(admin_bp, url_prefix="/crewassrun")  # Префикс з�
 #         app.run(debug=True, port=5000)
 if __name__ == "__main__":
     debug_mode = True
-    host = "0.0.0.0" if DOCKER_ENV == "True" else "127.0.0.1"
+    host = "0.0.0.0" if DOCKER_ENV else "127.0.0.1"
     port = 5000
 
-    env_str = "Docker" if DOCKER_ENV == "True" else "локальной среде"
+    env_str = "Docker" if DOCKER_ENV else "локальной среде"
     logger.info(
         f"Запуск Flask приложения в {env_str}: "
         f"debug={debug_mode}, host={host}, port={port}"
