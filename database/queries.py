@@ -1,4 +1,4 @@
-from sqlalchemy import func, select
+from sqlalchemy import func, select, delete
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.db import with_session
@@ -423,3 +423,36 @@ async def update_game_setting(session: AsyncSession, key: str, value: int) -> bo
         return True
     logger.warning(f"Настройка с ключом '{key}' не найдена для обновления")
     return False
+
+
+@with_session
+async def get_user_id_by_telegram_id(
+    session: AsyncSession, telegram_id: int, chat_id: int
+):
+    """Получение user_id по telegram_id и chat_id."""
+    result = await session.execute(
+        select(User.id).where(User.telegram_id == telegram_id, User.chat_id == chat_id)
+    )
+    user_id = result.scalar()
+    return user_id
+
+
+@with_session
+async def delete_user_buns(session: AsyncSession, telegram_id: int, chat_id: int):
+    """Удаление всех булок пользователя."""
+    user_id = await get_user_id_by_telegram_id(telegram_id, chat_id)
+    if user_id:
+        await session.execute(
+            delete(UserBun).where(
+                UserBun.user_id == user_id, UserBun.chat_id == chat_id
+            )
+        )
+        await session.commit()
+
+
+@with_session
+async def reset_user_on_zero_points(
+    session: AsyncSession, telegram_id: int, chat_id: int
+):
+    """Полное удаление булок пользователя при достижении 0 баллов."""
+    await delete_user_buns(telegram_id, chat_id)  # Теперь передаем session

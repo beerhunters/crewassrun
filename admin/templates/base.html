@@ -35,12 +35,16 @@
         .brand-link:hover {
             background: #3e5c76;
         }
-        .brand-logo {
-            width: 40px;
-            height: 27px;
-            display: none;
+        .brand-icon {
+            font-size: 1.5rem; /* Размер иконки */
+            color: #ff6f61; /* Начальный цвет */
             margin-right: 10px;
-            transition: all 0.3s ease;
+            display: none; /* Скрыта при развернутой панели */
+            transition: transform 0.5s ease, color 0.3s ease; /* Плавный переход для вращения и цвета */
+        }
+        .brand-link:hover .brand-icon {
+            transform: rotate(360deg); /* Вращение на 360 градусов при наведении */
+            color: #f1c40f; /* Меняем цвет на желтый при наведении */
         }
         .brand-text {
             font-weight: bold;
@@ -48,10 +52,10 @@
             text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         }
         .sidebar-collapse .brand-text {
-            display: none;
+            display: none; /* Текст скрывается при свернутой панели */
         }
-        .sidebar-collapse .brand-logo {
-            display: inline-block;
+        .sidebar-collapse .brand-icon {
+            display: inline-block; /* Иконка появляется при свернутой панели */
         }
         .nav-link {
             color: #ecf0f1 !important;
@@ -164,7 +168,7 @@
     <!-- Боковая панель -->
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
         <a href="{{ url_for('admin.index') }}" class="brand-link">
-            <img src="{{ url_for('static', filename='img/croissant.png') }}" alt="Croissant Logo" class="brand-logo">
+            <i class="fas fa-cookie brand-icon"></i> <!-- Используем иконку печенья -->
             <span class="brand-text">Bun Bot Admin</span>
         </a>
         <div class="sidebar">
@@ -212,12 +216,6 @@
                             <i class="bi bi-star-fill me-1"></i> Начисление очков
                         </a>
                     </li>
-<!--                    <li class="nav-item">-->
-<!--                      <a href="{{ url_for('admin.events') }}" class="nav-link">-->
-<!--                        <i class="nav-icon fas fa-calendar"></i>-->
-<!--                        <p>События</p>-->
-<!--                      </a>-->
-<!--                    </li>-->
                 </ul>
             </nav>
         </div>

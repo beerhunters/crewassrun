@@ -8,7 +8,9 @@ from database.queries import (
     get_user_by_username,
     get_user_buns_stats,
     get_random_user,
-    get_game_setting,  # Добавляем функцию для получения настроек
+    get_game_setting,
+    delete_user_buns,  # Импортируем напрямую для обертки
+    reset_user_on_zero_points,
 )
 from logger import logger
 import random
@@ -26,6 +28,13 @@ NO_POINTS_MESSAGES = [
     "Сосиски не бесплатные, @{username}! У тебя только {points}/{cost} баллов.",
     "Твои карманы пусты, @{username}! {points}/{cost} — это не сосисочный уровень.",
     "Без баллов сосиску не кинешь, @{username}! ({points}/{cost})",
+]
+
+NO_POINTS_RANDOM_MESSAGES = [
+    "@{username} попытался швырнуть случайную сосиску, но баллов нет ({points}/{cost})!",
+    "Сосиска осталась в кармане у @{username} — не хватает баллов ({points}/{cost})!",
+    "@{username} хотел кинуть сосиску наугад, но пустые карманы сказали 'нет' ({points}/{cost})!",
+    "Рандомная сосиска? Не сегодня, @{username}! Баллов мало ({points}/{cost}).",
 ]
 
 HIT_MESSAGES = [
@@ -76,6 +85,23 @@ MISS_MESSAGES = [
     "Сосиска от @{attacker} не долетела до @{target} — точность подкачала!",
 ]
 
+SELF_HIT_MESSAGES = [
+    "Сосиска чуть не попала в тебя самого, @{username}, но ты увернулся!",
+    "@{username} швырнул сосиску и чуть не стал жертвой сам — ловкость спасла!",
+    "Ой-ой, @{username}! Сосиска сделала круг и чуть не вернулась к тебе!",
+    "@{username} метнул сосиску в воздух, но она решила поиграть с тобой в догонялки!",
+    "Сосиска от @{username} чуть не устроила автогол, но ты вовремя отпрыгнул!",
+    "@{username}, ты чуть не угостил себя сосиской — аккуратнее с рандомом!",
+]
+
+ZERO_POINTS_MESSAGES = [
+    "@{username} остался без баллов и вылетел из гонки! Все булки растаяли.",
+    "Баллы @{username} обнулились — прощай, сосисочная слава и булки!",
+    "@{username} достиг дна: 0 баллов, 0 булок, 0 шансов!",
+    "Сосисочная карьера @{username} рухнула — 0 баллов, булки конфискованы!",
+    "@{username} теперь официально банкрот булочной войны — ни баллов, ни булок!",
+]
+
 
 @sausage_game_r.message(Command("sausage"))
 async def sausage_throw_handler(message: Message, bot: Bot):
@@ -83,19 +109,17 @@ async def sausage_throw_handler(message: Message, bot: Bot):
     chat_id = message.chat.id
     attacker = message.from_user
 
-    # Проверяем, указан ли юзернейм жертвы
     if not message.text.split(maxsplit=1)[1:]:
         await message.reply("Укажи, в кого кинуть сосиску! Пример: /sausage @username")
         return
 
-    # Получаем юзернейм жертвы
     target_username = message.text.split(maxsplit=1)[1].strip()
     if not target_username.startswith("@"):
         await message.reply(
             "Юзернейм должен начинаться с @! Пример: /sausage @username"
         )
         return
-    target_username = target_username[1:]  # Убираем @
+    target_username = target_username[1:]
 
     await process_sausage_throw(bot, chat_id, attacker, target_username)
 
@@ -106,23 +130,35 @@ async def random_sausage_throw_handler(message: Message, bot: Bot):
     chat_id = message.chat.id
     attacker = message.from_user
 
-    # Проверяем атакующего
     attacker_data = await get_user_by_id(attacker.id, chat_id)
     if not attacker_data or not attacker_data.in_game:
         await message.reply("Ты не в игре! Сначала вступи в чат и стань участником.")
         logger.debug(f"Пользователь {attacker.id} не в игре в чате {chat_id}")
         return
 
-    # Получаем случайного участника
+    SAUSAGE_THROW_COST = await get_game_setting("sausage_throw_cost") or 5
+    attacker_points = await get_user_points(attacker.id, chat_id)
+    if attacker_points < SAUSAGE_THROW_COST:
+        message_text = random.choice(NO_POINTS_RANDOM_MESSAGES).format(
+            username=attacker.username, points=attacker_points, cost=SAUSAGE_THROW_COST
+        )
+        await message.reply(message_text)
+        logger.info(
+            f"У {attacker.username} (ID: {attacker.id}) недостаточно баллов для случайного броска: {attacker_points}"
+        )
+        return
+
     target_data = await get_random_user(chat_id)
     if not target_data:
         await message.reply("В чате нет активных участников для сосисочной атаки!")
         logger.debug(f"Нет активных участников в чате {chat_id}")
         return
 
-    # Исключаем попадание в самого себя
     if target_data.telegram_id == attacker.id:
-        await message.reply("Сосиска чуть не попала в тебя самого, но ты увернулся!")
+        message_text = random.choice(SELF_HIT_MESSAGES).format(
+            username=attacker.username
+        )
+        await message.reply(message_text)
         logger.info(
             f"{attacker.username} (ID: {attacker.id}) чуть не попал в себя в чате {chat_id}"
         )
@@ -139,14 +175,12 @@ async def random_sausage_throw_handler(message: Message, bot: Bot):
 
 async def process_sausage_throw(bot: Bot, chat_id: int, attacker, target_username: str):
     """Общая логика броска сосиски для обеих команд."""
-    # Получаем настройки из базы данных
     SAUSAGE_THROW_COST = await get_game_setting("sausage_throw_cost") or 5
     SAUSAGE_HIT_DAMAGE = await get_game_setting("sausage_hit_damage") or 3
     SAUSAGE_PENALTY = await get_game_setting("sausage_penalty") or 3
     SAUSAGE_BONUS = await get_game_setting("sausage_bonus") or 3
-    MISS_CHANCE = await get_game_setting("miss_chance") or 10  # По умолчанию 10%
+    MISS_CHANCE = await get_game_setting("miss_chance") or 10
 
-    # Проверяем атакующего
     attacker_data = await get_user_by_id(attacker.id, chat_id)
     if not attacker_data or not attacker_data.in_game:
         await bot.send_message(
@@ -155,7 +189,6 @@ async def process_sausage_throw(bot: Bot, chat_id: int, attacker, target_usernam
         logger.debug(f"Пользователь {attacker.id} не в игре в чате {chat_id}")
         return
 
-    # Получаем текущие баллы атакующего
     attacker_points = await get_user_points(attacker.id, chat_id)
     if attacker_points < SAUSAGE_THROW_COST:
         message_text = random.choice(NO_POINTS_MESSAGES).format(
@@ -167,7 +200,6 @@ async def process_sausage_throw(bot: Bot, chat_id: int, attacker, target_usernam
         )
         return
 
-    # Ищем жертву по юзернейму в базе данных
     target_data = await get_user_by_username(chat_id, target_username)
     if not target_data:
         await bot.send_message(
@@ -176,7 +208,6 @@ async def process_sausage_throw(bot: Bot, chat_id: int, attacker, target_usernam
         logger.debug(f"Жертва @{target_username} не найдена в базе для чата {chat_id}")
         return
 
-    # Проверяем, активен ли пользователь в чате
     try:
         chat_member = await bot.get_chat_member(chat_id, target_data.telegram_id)
         if chat_member.status in ["left", "kicked"]:
@@ -206,15 +237,22 @@ async def process_sausage_throw(bot: Bot, chat_id: int, attacker, target_usernam
 
     # Уменьшаем баллы атакующего за бросок
     new_attacker_points = attacker_points - SAUSAGE_THROW_COST
-    await update_user_points(
-        attacker.id, chat_id, -SAUSAGE_THROW_COST
-    )  # Используем разницу
+    await update_user_points(attacker.id, chat_id, -SAUSAGE_THROW_COST)
     logger.info(
         f"{attacker.username} (ID: {attacker.id}) бросил сосиску, баллы: {attacker_points} -> {new_attacker_points}"
     )
 
-    # Проверяем вероятность промаха (в процентах от 1 до 100)
-    if random.randint(1, 100) <= MISS_CHANCE:  # MISS_CHANCE% шанс промаха
+    # Проверяем, не обнулились ли баллы атакующего
+    if new_attacker_points == 0:
+        await reset_user_on_zero_points(attacker.id, chat_id)
+        message_text = random.choice(ZERO_POINTS_MESSAGES).format(
+            username=attacker.username
+        )
+        await bot.send_message(chat_id, message_text)
+        logger.info(f"{attacker.username} (ID: {attacker.id}) обнулился: удалены булки")
+
+    # Проверяем вероятность промаха
+    if random.randint(1, 100) <= MISS_CHANCE:
         message_text = random.choice(MISS_MESSAGES).format(
             attacker=attacker.username, target=target_username
         )
@@ -222,7 +260,7 @@ async def process_sausage_throw(bot: Bot, chat_id: int, attacker, target_usernam
         logger.info(
             f"{attacker.username} (ID: {attacker.id}) промахнулся по @{target_username} с шансом {MISS_CHANCE}%"
         )
-        return  # Завершаем выполнение, если промах
+        return
 
     # Получаем баллы и булочки жертвы
     target_points = await get_user_points(target_data.telegram_id, chat_id)
@@ -234,13 +272,8 @@ async def process_sausage_throw(bot: Bot, chat_id: int, attacker, target_usernam
     # Обрабатываем попадание
     if target_points > 0:
         if has_sausage:
-            # Жертва получает бонус за наличие сосиски
             new_target_points = target_points + SAUSAGE_BONUS
-            await update_user_points(
-                target_data.telegram_id,
-                chat_id,
-                SAUSAGE_BONUS,  # Передаём только изменение
-            )
+            await update_user_points(target_data.telegram_id, chat_id, SAUSAGE_BONUS)
             message_text = random.choice(SAUSAGE_BONUS_MESSAGES).format(
                 attacker=attacker.username,
                 target=target_username,
@@ -253,12 +286,9 @@ async def process_sausage_throw(bot: Bot, chat_id: int, attacker, target_usernam
                 f"Бонус! У {target_username} (ID: {target_data.telegram_id}) была сосиска, баллы: {target_points} -> {new_target_points}"
             )
         else:
-            # У жертвы есть баллы, но нет сосиски — отнимаем баллы
             new_target_points = max(0, target_points - SAUSAGE_HIT_DAMAGE)
             await update_user_points(
-                target_data.telegram_id,
-                chat_id,
-                -SAUSAGE_HIT_DAMAGE,  # Передаём только изменение
+                target_data.telegram_id, chat_id, -SAUSAGE_HIT_DAMAGE
             )
             message_text = random.choice(HIT_MESSAGES).format(
                 attacker=attacker.username,
@@ -271,12 +301,20 @@ async def process_sausage_throw(bot: Bot, chat_id: int, attacker, target_usernam
             logger.info(
                 f"Попадание! У {target_username} (ID: {target_data.telegram_id}) баллы: {target_points} -> {new_target_points}"
             )
+
+            # Проверяем, не обнулились ли баллы жертвы
+            if new_target_points == 0:
+                await reset_user_on_zero_points(target_data.telegram_id, chat_id)
+                message_text = random.choice(ZERO_POINTS_MESSAGES).format(
+                    username=target_username
+                )
+                await bot.send_message(chat_id, message_text)
+                logger.info(
+                    f"{target_username} (ID: {target_data.telegram_id}) обнулился: удалены булки"
+                )
     else:
-        # У жертвы нет баллов, штрафуем атакующего
         new_attacker_points = max(0, new_attacker_points - SAUSAGE_PENALTY)
-        await update_user_points(
-            attacker.id, chat_id, -SAUSAGE_PENALTY
-        )  # Передаём только изменение
+        await update_user_points(attacker.id, chat_id, -SAUSAGE_PENALTY)
         message_text = random.choice(PENALTY_MESSAGES).format(
             attacker=attacker.username,
             target=target_username,
@@ -288,3 +326,14 @@ async def process_sausage_throw(bot: Bot, chat_id: int, attacker, target_usernam
         logger.info(
             f"Штраф! У {attacker.username} (ID: {attacker.id}) баллы: {new_attacker_points + SAUSAGE_PENALTY} -> {new_attacker_points}"
         )
+
+        # Проверяем, не обнулились ли баллы атакующего после штрафа
+        if new_attacker_points == 0:
+            await reset_user_on_zero_points(attacker.id, chat_id)
+            message_text = random.choice(ZERO_POINTS_MESSAGES).format(
+                username=attacker.username
+            )
+            await bot.send_message(chat_id, message_text)
+            logger.info(
+                f"{attacker.username} (ID: {attacker.id}) обнулился после штрафа: удалены булки"
+            )
