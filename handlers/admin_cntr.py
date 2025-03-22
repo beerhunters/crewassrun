@@ -15,7 +15,7 @@ from database.queries import (
 from handlers.in_game import pluralize_points
 from collections import defaultdict
 
-# from main import send_daily_messages
+from handlers.random_user import send_random_message
 
 admin_cntr = Router()
 
@@ -263,21 +263,35 @@ async def admin_help_handler(message: types.Message):
         "🗑 /remove_bun 'название' - Удалить булочку.\n\n"
         "➕ /add_points_all 'чат' 'баллы' - Добавить баллы всем пользователям в чате.\n"
         "➕ /add_points 'юзернейм' 'баллы' - Добавить баллы пользователю по юзернейму.\n\n"
-        "📬 /send_daily - Ручной запуск отправки ежедневных сообщений.\n\n"
+        "📬 /send_to_chat - Ручной запуск отправки ежедневных сообщений.\n\n"
         "ℹ️ /help - Список команд."
     )
     await message.reply(help_text, parse_mode="HTML")
 
 
-# @admin_cntr.message(Command(commands="send_daily"))
-# async def send_daily_handler(message: types.Message, bot):
-#     """Ручной запуск отправки ежедневных сообщений (только для админа в ЛС)."""
-#     if message.chat.type != "private" or message.from_user.id != ADMIN:
-#         await message.reply(
-#             "Эта команда доступна только администратору в личных сообщениях!"
-#         )
-#         return
-#
-#     await message.reply("Запускаю отправку ежедневных сообщений...")
-#     await send_daily_messages(bot)
-#     await message.reply("Отправка завершена!")
+@admin_cntr.message(Command(commands="send_to_chat"))
+async def send_to_chat_handler(message: types.Message, bot):
+    """Ручная отправка сообщения в указанный чат (только для админа в ЛС)."""
+    if message.chat.type != "private" or message.from_user.id != ADMIN:
+        await message.reply(
+            "Эта команда доступна только администратору в личных сообщениях!"
+        )
+        return
+
+    args = message.text.split(maxsplit=1)[1:]  # Пропускаем команду
+    if not args:
+        await message.reply("Использование: /send_to_chat <chat_id>")
+        return
+
+    try:
+        chat_id = int(args[0])  # Преобразуем chat_id в целое число
+    except ValueError:
+        await message.reply("chat_id должен быть числом!")
+        return
+
+    await message.reply(f"Отправляю сообщение в чат {chat_id}...")
+    try:
+        await send_random_message(bot, chat_id)
+        await message.reply(f"Сообщение успешно отправлено в чат {chat_id}!")
+    except Exception as e:
+        await message.reply(f"Ошибка при отправке в чат {chat_id}: {str(e)}")
