@@ -15,6 +15,8 @@ from database.queries import (
 from handlers.in_game import pluralize_points
 from collections import defaultdict
 
+from main import send_daily_messages
+
 admin_cntr = Router()
 
 ADMIN = int(ADMIN)
@@ -261,6 +263,21 @@ async def admin_help_handler(message: types.Message):
         "🗑 /remove_bun 'название' - Удалить булочку.\n\n"
         "➕ /add_points_all 'чат' 'баллы' - Добавить баллы всем пользователям в чате.\n"
         "➕ /add_points 'юзернейм' 'баллы' - Добавить баллы пользователю по юзернейму.\n\n"
+        "📬 /send_daily - Ручной запуск отправки ежедневных сообщений.\n\n"
         "ℹ️ /help - Список команд."
     )
     await message.reply(help_text, parse_mode="HTML")
+
+
+@admin_cntr.message(Command(commands="send_daily"))
+async def send_daily_handler(message: types.Message, bot):
+    """Ручной запуск отправки ежедневных сообщений (только для админа в ЛС)."""
+    if message.chat.type != "private" or message.from_user.id != ADMIN:
+        await message.reply(
+            "Эта команда доступна только администратору в личных сообщениях!"
+        )
+        return
+
+    await message.reply("Запускаю отправку ежедневных сообщений...")
+    await send_daily_messages(bot)
+    await message.reply("Отправка завершена!")
