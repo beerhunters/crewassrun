@@ -15,7 +15,7 @@ from database.queries import (
 from handlers.in_game import pluralize_points
 from collections import defaultdict
 
-from main import send_daily_messages
+# from main import send_daily_messages
 
 admin_cntr = Router()
 
@@ -269,15 +269,15 @@ async def admin_help_handler(message: types.Message):
     await message.reply(help_text, parse_mode="HTML")
 
 
-@admin_cntr.message(Command(commands="send_daily"))
-async def send_daily_handler(message: types.Message, bot):
-    """Ручной запуск отправки ежедневных сообщений (только для админа в ЛС)."""
-    if message.chat.type != "private" or message.from_user.id != ADMIN:
-        await message.reply(
-            "Эта команда доступна только администратору в личных сообщениях!"
-        )
-        return
-
-    await message.reply("Запускаю отправку ежедневных сообщений...")
-    await send_daily_messages(bot)
-    await message.reply("Отправка завершена!")
+# @admin_cntr.message(Command(commands="send_daily"))
+# async def send_daily_handler(message: types.Message, bot):
+#     """Ручной запуск отправки ежедневных сообщений (только для админа в ЛС)."""
+#     if message.chat.type != "private" or message.from_user.id != ADMIN:
+#         await message.reply(
+#             "Эта команда доступна только администратору в личных сообщениях!"
+#         )
+#         return
+#
+#     await message.reply("Запускаю отправку ежедневных сообщений...")
+#     await send_daily_messages(bot)
+#     await message.reply("Отправка завершена!")
