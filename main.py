@@ -72,7 +72,7 @@ async def main():
                 start=True,  # Запускаем сразу
             )
             cron_task.start()
-            logger.info("Задача отправки утренних сообщений запущена...")
+            logger.warning("Задача отправки утренних сообщений запущена...")
         except Exception as e:
             logger.error(f"Ошибка при запуске задачи: {e}")
         logger.info("Бот запущен...")
