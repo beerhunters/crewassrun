@@ -10,7 +10,6 @@ from config import API_TOKEN
 from handlers.admin_cntr import admin_cntr
 from handlers.admin_points import admin_points_r
 
-# from handlers.duel_game import duel_game_r
 from handlers.exceptions import error_router
 from handlers.in_game import in_game_r
 from handlers.new_member import new_member_r
@@ -49,7 +48,6 @@ async def main():
         new_member_r,
         in_game_r,
         sausage_game_r,
-        # duel_game_r,
         admin_cntr,
         admin_points_r,
         error_router,
