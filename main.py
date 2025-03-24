@@ -57,8 +57,8 @@ async def main():
         BotCommand(command="/play", description="Играть"),
         BotCommand(command="/stats", description="Статистика"),
         BotCommand(command="/stats_me", description="Моя статистика"),
-        BotCommand(command="/sausage", description="Атаковать сосиской"),
-        BotCommand(command="/random_sausage", description="Случайная сосиска"),
+        # BotCommand(command="/sausage", description="Атаковать сосиской"),
+        # BotCommand(command="/random_sausage", description="Случайная сосиска"),
     ]
     await bot.set_my_commands(bot_commands)
     try:
