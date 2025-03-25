@@ -2,7 +2,7 @@ import functools
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
-DOCKER_ENV = False
+DOCKER_ENV = True
 
 DB_URL = (
     "sqlite+aiosqlite:////app/db.sqlite3"

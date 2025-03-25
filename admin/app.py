@@ -34,7 +34,7 @@ app = Flask(__name__, template_folder="templates", static_folder="static")
 app.secret_key = os.getenv("SECRET_KEY")  # Замените на безопасный ключ
 
 # Определяем, в Docker ли мы
-DOCKER_ENV = False
+DOCKER_ENV = True
 
 # Устанавливаем API_URL
 API_URL = "http://api:8000" if DOCKER_ENV else "http://localhost:8000"
