@@ -64,8 +64,6 @@ USER_NOT_FOUND_MESSAGE = (
 NO_ACTIVE_USERS_MESSAGE = "В пекарне пусто — нет активных булочников для замеса очков!"
 NOT_PRIVATE_MESSAGE = "Эти команды работают только в личке главного пекаря!"
 
-ADMIN = int(ADMIN)
-
 
 async def apply_points_to_user(
     telegram_id: int, chat_id: int, points: int

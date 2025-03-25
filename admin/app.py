@@ -32,11 +32,12 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.secret_key = os.getenv("SECRET_KEY")  # Замените на безопасный ключ
+
 # Определяем, в Docker ли мы
-# DOCKER_ENV = os.getenv("DOCKER_ENV", "False") == "True"
-DOCKER_ENV = os.getenv("DOCKER_ENV", False)
+DOCKER_ENV = False
+
 # Устанавливаем API_URL
-API_URL = os.getenv("API_URL") if DOCKER_ENV else os.getenv("API_URL_LOCAL")
+API_URL = "http://api:8000" if DOCKER_ENV else "http://localhost:8000"
 
 # Инициализация Flask-Login и Bcrypt
 login_manager = LoginManager()
@@ -563,7 +564,7 @@ app.register_blueprint(admin_bp, url_prefix="/crewassrun")  # Префикс з�
 
 
 if __name__ == "__main__":
-    debug_mode = True
+    debug_mode = False if DOCKER_ENV else True
     host = "0.0.0.0" if DOCKER_ENV else "127.0.0.1"
     port = 5000
 
@@ -574,7 +575,7 @@ if __name__ == "__main__":
     )
 
     # В Docker используем Gunicorn, локально — Flask
-    if DOCKER_ENV == "True":
+    if DOCKER_ENV:
         from gunicorn.app.base import BaseApplication
 
         class StandaloneApplication(BaseApplication):

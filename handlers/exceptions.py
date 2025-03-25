@@ -7,6 +7,8 @@ from typing import Optional
 from aiogram import Router, Bot
 from aiogram.handlers import ErrorHandler
 from aiogram.types import Update
+
+from config import FOR_LOGS
 from logger import logger  # Импортируем единый логгер
 
 error_router = Router()
@@ -152,7 +154,7 @@ class MyHandler(ErrorHandler):
             f"📚 <b>Трейсбек:</b>\n<pre>{error_info.traceback_snippet}</pre>"
         )
         bot: Bot = self.bot
-        FOR_LOGS = os.getenv("FOR_LOGS")
+        # FOR_LOGS = os.getenv("FOR_LOGS")
         try:
             await bot.send_message(FOR_LOGS, admin_message, parse_mode="HTML")
             logger.info("Сообщение отправлено администратору %s", FOR_LOGS)

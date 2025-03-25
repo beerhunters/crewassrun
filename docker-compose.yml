@@ -7,10 +7,6 @@ services:
       dockerfile: Dockerfile.bot
     environment:
       - API_TOKEN=${API_TOKEN}
-      - CHAT_ID=${CHAT_ID}
-      - ADMIN=${ADMIN}
-      - FOR_LOGS=${FOR_LOGS}
-      - DATABASE_URL=${DATABASE_URL}
     volumes:
       - ./logs:/app/logs
       - ./db.sqlite3:/app/db.sqlite3
@@ -27,7 +23,6 @@ services:
       dockerfile: Dockerfile.api
     environment:
       - API_TOKEN=${API_TOKEN}
-      - DATABASE_URL=${DATABASE_URL}
     volumes:
       - ./logs:/app/logs
       - ./db.sqlite3:/app/db.sqlite3
@@ -46,9 +41,7 @@ services:
       dockerfile: Dockerfile.admin
     environment:
       - API_TOKEN=${API_TOKEN}
-      - DATABASE_URL=${DATABASE_URL}
       - PASSWORD_FOR_ADMIN=${PASSWORD_FOR_ADMIN}
-      - DOCKER_ENV=1
     volumes:
       - ./logs:/app/logs
       - ./db.sqlite3:/app/db.sqlite3
@@ -65,8 +58,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.nginx
-      args:
-        - DOMAIN_OR_IP=${DOMAIN_OR_IP}
+#      args:
+#        - DOMAIN_OR_IP=${DOMAIN_OR_IP}
     ports:
       - "80:80"
       - "443:443"

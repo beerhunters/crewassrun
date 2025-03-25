@@ -7,12 +7,12 @@ RUN mkdir -p /etc/nginx/certs
 
 COPY .env ./
 # Аргумент сборки для IP или домена
-ARG DOMAIN_OR_IP
-RUN if [ -z "$DOMAIN_OR_IP" ]; then echo "DOMAIN_OR_IP не задан!" && exit 1; fi && \
+# ARG DOMAIN_OR_IP
+RUN if [ -z "93.183.81.123" ]; then echo "DOMAIN_OR_IP не задан!" && exit 1; fi && \
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout /etc/nginx/certs/selfsigned.key \
     -out /etc/nginx/certs/selfsigned.crt \
-    -subj "/C=RU/ST=State/L=City/O=Organization/CN=${DOMAIN_OR_IP}"
+    -subj "/C=RU/ST=State/L=City/O=Organization/CN=93.183.81.123"
 
 # Удаляем стандартную конфигурацию
 RUN rm -f /etc/nginx/conf.d/default.conf
