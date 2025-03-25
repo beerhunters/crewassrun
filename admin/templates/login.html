@@ -15,23 +15,25 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
+            padding: 10px;
         }
         .login-box {
-            width: 400px;
-            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
             background: #fff;
             border-radius: 15px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
         .login-logo {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
         .login-logo img {
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
             transition: transform 0.3s ease;
         }
         .login-logo img:hover {
@@ -62,6 +64,24 @@
         .alert {
             border-radius: 10px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        @media (max-width: 576px) {
+            .login-box {
+                padding: 15px;
+            }
+            .login-logo img {
+                width: 50px;
+                height: 50px;
+            }
+            .login-logo h2 {
+                font-size: 1.5rem;
+            }
+            .form-control, .btn {
+                font-size: 0.9rem;
+            }
+            .input-group-text {
+                padding: 0.3rem 0.5rem;
+            }
         }
     </style>
 </head>

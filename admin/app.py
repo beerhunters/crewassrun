@@ -8,6 +8,7 @@ from flask import (
     redirect,
     url_for,
     flash,
+    jsonify,
 )
 from flask_login import (
     LoginManager,
@@ -204,7 +205,6 @@ def results():
     try:
         users_data = loop.run_until_complete(fetch_data("users/"))
         user_buns = loop.run_until_complete(fetch_data("user_buns/"))
-        # logger.info(f"Получено результатов: {len(user_buns)}")
         user_map = {user["id"]: user["username"] for user in users_data}
         for ub in user_buns:
             ub["username"] = user_map.get(
@@ -217,9 +217,38 @@ def results():
     finally:
         loop.close()
 
+    # Получаем параметры из запроса
     page = int(request.args.get("page", 1))
     per_page = int(request.args.get("per_page", 10))
+    search_query = request.args.get("search", "").strip().lower()
+
+    # Фильтрация данных
+    if search_query:
+        user_buns = [
+            ub
+            for ub in user_buns
+            if (
+                search_query in str(ub["username"]).lower()
+                or search_query in str(ub["bun"]).lower()
+                or search_query in str(ub["chat_id"])
+            )
+        ]
+
+    # Пагинация
     paginated_user_buns, total_pages = paginate(user_buns, page, per_page)
+
+    # Если это AJAX-запрос, возвращаем JSON
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify(
+            {
+                "user_buns": paginated_user_buns,
+                "page": page,
+                "per_page": per_page,
+                "total_pages": total_pages,
+            }
+        )
+
+    # Обычный рендеринг для начальной загрузки
     return render_template(
         "results.html",
         user_buns=paginated_user_buns,
@@ -532,13 +561,7 @@ def delete_setting(key):
 # Регистрируем Blueprint
 app.register_blueprint(admin_bp, url_prefix="/crewassrun")  # Префикс задаем здесь
 
-# if __name__ == "__main__":
-#     logger.info("Запуск Flask приложения")
-#     # Запуск приложения
-#     if DOCKER_ENV:
-#         app.run(debug=True, host="0.0.0.0", port=5000)
-#     else:
-#         app.run(debug=True, port=5000)
+
 if __name__ == "__main__":
     debug_mode = True
     host = "0.0.0.0" if DOCKER_ENV else "127.0.0.1"

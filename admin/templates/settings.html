@@ -3,29 +3,28 @@
 {% block header %}<i class="bi bi-gear-fill me-2"></i> Настройки игры{% endblock %}
 {% block content %}
 <div class="mt-5">
-    <!-- Форма добавления новой настройки -->
-    <div class="card shadow-sm p-4 mb-5" style="background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 15px;">
+    <div class="card shadow-sm p-3 mb-5" style="background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 15px;">
         <form method="POST" action="{{ url_for('admin.add_setting') }}">
             <div class="row g-3 align-items-center">
-                <div class="col-md-3">
+                <div class="col-12 col-md-3">
                     <div class="input-group">
                         <span class="input-group-text bg-warning text-white"><i class="bi bi-key"></i></span>
                         <input type="text" name="key" class="form-control" placeholder="Ключ" required>
                     </div>
                 </div>
-                <div class="col-md-2">
+                <div class="col-12 col-md-2">
                     <div class="input-group">
                         <span class="input-group-text bg-info text-white"><i class="bi bi-123"></i></span>
                         <input type="number" name="value" class="form-control" placeholder="Значение" required>
                     </div>
                 </div>
-                <div class="col-md-5">
+                <div class="col-12 col-md-5">
                     <div class="input-group">
                         <span class="input-group-text bg-secondary text-white"><i class="bi bi-chat-left-text"></i></span>
                         <input type="text" name="description" class="form-control" placeholder="Описание">
                     </div>
                 </div>
-                <div class="col-md-2">
+                <div class="col-12 col-md-2">
                     <button type="submit" class="btn btn-primary w-100 shadow-sm hover-effect">
                         <i class="bi bi-plus-circle me-1"></i> Добавить
                     </button>
@@ -34,37 +33,36 @@
         </form>
     </div>
 
-    <!-- Таблица настроек -->
-    <div class="card shadow-sm" style="border-radius: 15px; overflow: hidden;">
+    <div class="card shadow-sm" style="border-radius: 15px; overflow-x: auto;">
         <div class="card-body p-0">
             <table class="table table-hover mb-0">
                 <thead class="bg-dark text-white">
                     <tr>
-                        <th class="ps-4">ID</th>
+                        <th class="ps-3">ID</th>
                         <th>Ключ</th>
                         <th>Значение</th>
                         <th>Описание</th>
-                        <th class="pe-4">Действия</th>
+                        <th class="pe-3">Действия</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for setting in settings %}
                     <tr class="align-middle hover-row">
-                        <td class="ps-4">{{ setting.id }}</td>
+                        <td class="ps-3">{{ setting.id }}</td>
                         <td>{{ setting.key }}</td>
                         <td>
-                            <form method="POST" action="{{ url_for('admin.edit_setting', key=setting.key) }}" class="d-flex align-items-center">
-                                <input type="number" name="value" value="{{ setting.value }}" class="form-control me-2" style="width: 100px; border-radius: 10px;" required>
+                            <form method="POST" action="{{ url_for('admin.edit_setting', key=setting.key) }}" class="d-flex align-items-center flex-wrap">
+                                <input type="number" name="value" value="{{ setting.value }}" class="form-control me-2" style="width: 80px; border-radius: 8px;" required>
                                 <input type="hidden" name="description" value="{{ setting.description or '' }}">
-                                <button type="submit" class="btn btn-sm btn-success shadow-sm hover-effect">
-                                    <i class="bi bi-check-circle"></i> Сохранить
+                                <button type="submit" class="btn btn-sm btn-success shadow-sm hover-effect mt-1 mt-md-0">
+                                    <i class="bi bi-check-circle"></i>
                                 </button>
                             </form>
                         </td>
                         <td>{{ setting.description or '' }}</td>
-                        <td class="pe-4">
+                        <td class="pe-3">
                             <a href="{{ url_for('admin.delete_setting', key=setting.key) }}" class="btn btn-sm btn-danger shadow-sm hover-effect" onclick="return confirm('Вы уверены?');">
-                                <i class="bi bi-trash"></i> Удалить
+                                <i class="bi bi-trash"></i>
                             </a>
                         </td>
                     </tr>
@@ -74,7 +72,6 @@
         </div>
     </div>
 
-    <!-- Пагинация -->
     {% if total_pages > 1 %}
     <nav class="mt-4 d-flex justify-content-center">
         <ul class="pagination shadow-sm">
@@ -103,7 +100,6 @@
 </div>
 
 <style>
-    /* Кастомные стили */
     .hover-effect {
         transition: transform 0.2s, box-shadow 0.2s;
     }
@@ -129,6 +125,23 @@
     }
     .pagination .page-link:hover {
         background-color: #ffe5e2;
+    }
+    @media (max-width: 576px) {
+        .card {
+            padding: 5px;
+        }
+        .form-control, .btn {
+            font-size: 0.85rem;
+        }
+        .table {
+            font-size: 0.8rem;
+        }
+        th, td {
+            padding: 0.4rem;
+        }
+        .btn-sm {
+            padding: 0.2rem 0.4rem;
+        }
     }
 </style>
 {% endblock %}
